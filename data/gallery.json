@@ -1,40 +1,16 @@
 {
   "gallery": [
     {
-      "src": "./assets/portrait.webp",
       "title": "Portrait / BTA",
-      "category": "Portrait",
-      "alt": "Black-and-white promotional portrait from the band’s original website"
+      "src": "./assets/portrait.webp",
+      "alt": "Black-and-white promotional portrait from the band’s original website",
+      "category": "Portrait"
     },
     {
-      "src": "./assets/source-18.webp",
-      "title": "Neon star field",
-      "category": "Visual",
-      "alt": "Pink and cyan neon stars on a black background, original website visual"
-    },
-    {
-      "src": "./assets/source-15.webp",
       "title": "Optical / violet",
-      "category": "Visual",
-      "alt": "Violet compact disc from the original site’s hidden-track section"
-    },
-    {
-      "src": "./assets/source-17.webp",
-      "title": "Dial into the void",
-      "category": "Visual",
-      "alt": "Silver flip phone with a hot-pink screen from the original website"
-    },
-    {
-      "src": "./assets/source-07.webp",
-      "title": "After dark",
-      "category": "Visual",
-      "alt": "White star garland against a dark blue sky, original site visual"
-    },
-    {
-      "src": "./assets/source-14.webp",
-      "title": "Still online",
-      "category": "Visual",
-      "alt": "Neon purple and blue hanging stars from the original website"
+      "src": "./assets/source-15.webp",
+      "alt": "Violet compact disc from the original site’s hidden-track section",
+      "category": "Visual"
     }
   ]
 }
