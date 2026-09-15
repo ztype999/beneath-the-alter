@@ -1,0 +1,80 @@
+{
+  "releases": [
+    {
+      "title": "Armageddon",
+      "url": "https://open.spotify.com/album/7nTfy6O2loOZ2rcrd77cFr",
+      "image": "./assets/release-0.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02377ebee7acd1bb621d320323"
+    },
+    {
+      "title": "Anguish",
+      "url": "https://open.spotify.com/album/1JoUWtp8bMrn0YovlCBWG7",
+      "image": "./assets/release-1.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e023c898da1d8bb6583a38ba530"
+    },
+    {
+      "title": "Falling apart",
+      "url": "https://open.spotify.com/album/1NsvVCZrO51yVja9NA7BfX",
+      "image": "./assets/release-2.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02429eba3180eeab92638feb7b"
+    },
+    {
+      "title": "Corazón sin cara",
+      "url": "https://open.spotify.com/album/6J3ABbimVmIYBM0sqTTeyX",
+      "image": "./assets/release-3.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02a7c86e7e939a6c8a83b5445e"
+    },
+    {
+      "title": "GRAVEYARD",
+      "url": "https://open.spotify.com/album/3xlEpDO3ju6YDDtGiOKwRB",
+      "image": "./assets/release-4.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02db3339684055287bd92e6e39"
+    },
+    {
+      "title": "DTMF",
+      "url": "https://open.spotify.com/album/6TGfyHUt6UPDjj7QlYvBC9",
+      "image": "./assets/release-5.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02eca3e299e1dbbb7c1fb2acd7"
+    },
+    {
+      "title": "NOT MYSELF",
+      "url": "https://open.spotify.com/album/0aDSBA5HYTyakuZ2pPgEqM",
+      "image": "./assets/release-6.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e024a99b05dd74d216d6deeb8ce"
+    },
+    {
+      "title": "redemption",
+      "url": "https://open.spotify.com/album/6vdQtMP6s1vQHwgoa6pnwQ",
+      "image": "./assets/release-7.webp",
+      "sourceImage": "https://i.scdn.co/image/ab67616d00001e02d40025239921604113feecf5"
+    }
+  ],
+  "tracks": [
+    {
+      "title": "DTMF",
+      "url": "https://open.spotify.com/track/68Hm91Blh1SOxIvoU39IBf",
+      "image": "./assets/release-5.webp"
+    },
+    {
+      "title": "NOT MYSELF",
+      "url": "https://open.spotify.com/album/0aDSBA5HYTyakuZ2pPgEqM",
+      "image": "./assets/release-6.webp"
+    },
+    {
+      "title": "CORAZON SIN CARA",
+      "url": "https://open.spotify.com/track/1tNqr0UCk1bbbdUN883cdz",
+      "image": "./assets/release-3.webp"
+    },
+    {
+      "title": "REDEMPTION",
+      "url": "https://open.spotify.com/album/6vdQtMP6s1vQHwgoa6pnwQ",
+      "image": "./assets/release-7.webp"
+    },
+    {
+      "title": "FALLING APART",
+      "url": "https://open.spotify.com/track/5YTosOMm8vD2KFdoffGRMf",
+      "image": "./assets/release-2.webp"
+    }
+  ],
+  "latestReleaseUrl": "https://open.spotify.com/album/1JoUWtp8bMrn0YovlCBWG7"
+}

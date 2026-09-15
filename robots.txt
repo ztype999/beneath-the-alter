@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ztype999.github.io/beneath-the-alter/sitemap.xml

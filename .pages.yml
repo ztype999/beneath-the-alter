@@ -1,0 +1,382 @@
+media:
+- name: images
+  label: Image library
+  input: assets
+  output: ./assets
+  categories:
+  - image
+  extensions:
+  - png
+  - jpg
+  - jpeg
+  - webp
+  - avif
+  rename: safe
+content:
+- name: settings
+  label: 01 · Website & homepage
+  type: file
+  path: data/settings.json
+  format: json
+  fields:
+  - name: name
+    label: Band name
+    type: string
+    required: true
+  - name: brandLine1
+    label: Logo — first line
+    type: string
+    required: true
+  - name: brandLine2
+    label: Logo — second line
+    type: string
+    required: true
+  - name: genre
+    label: Genre
+    type: string
+    required: true
+  - name: location
+    label: Location
+    type: string
+    required: true
+  - name: mood
+    label: Mood
+    type: string
+    required: true
+  - name: taglineTop
+    label: Hero tagline — first line
+    type: string
+  - name: taglineBottom
+    label: Hero tagline — second line
+    type: string
+  - name: heroPortrait
+    label: Hero portrait (transparent background recommended)
+    type: image
+    required: true
+    options:
+      media: images
+      path: assets/uploads
+      extensions:
+      - png
+      - jpg
+      - jpeg
+      - webp
+      - avif
+  - name: profilePortrait
+    label: Band / profile portrait
+    type: image
+    required: true
+    options:
+      media: images
+      path: assets/uploads
+      extensions:
+      - png
+      - jpg
+      - jpeg
+      - webp
+      - avif
+  - name: email
+    label: Band contact email
+    type: string
+    required: true
+  - name: cashapp
+    label: Band Cash App URL
+    type: string
+    required: true
+    options:
+      pattern: ^https?://[^\s]+$
+  - name: accent
+    label: Accent colour (six-digit hex)
+    type: string
+    options:
+      pattern: ^#[0-9a-fA-F]{6}$
+  - name: socials
+    label: Official social accounts
+    type: object
+    list: true
+    fields:
+    - name: name
+      label: Platform
+      type: select
+      required: true
+      options:
+        values:
+        - Spotify
+        - Instagram
+        - YouTube
+        - TikTok
+        - Bandcamp
+        - Facebook
+        - Other
+    - name: url
+      label: Full profile URL
+      type: string
+      required: true
+      options:
+        pattern: ^https?://[^\s]+$
+- name: music
+  label: 02 · Music & latest release
+  type: file
+  path: data/music.json
+  format: json
+  fields:
+  - name: latestReleaseUrl
+    label: Homepage feature — paste the URL of a release listed below
+    type: string
+    required: true
+    options:
+      pattern: ^https?://[^\s]+$
+  - name: releases
+    label: Releases (add, edit, delete, or reorder)
+    type: object
+    list: true
+    fields:
+    - name: title
+      label: Release title
+      type: string
+      required: true
+    - name: url
+      label: Official listening URL
+      type: string
+      required: true
+      options:
+        pattern: ^https?://[^\s]+$
+    - name: image
+      label: Cover artwork
+      type: image
+      required: true
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+  - name: tracks
+    label: Music player playlist
+    type: object
+    list: true
+    fields:
+    - name: title
+      label: Track title
+      type: string
+      required: true
+    - name: url
+      label: Official track / release URL
+      type: string
+      required: true
+      options:
+        pattern: ^https?://[^\s]+$
+    - name: image
+      label: Optional track artwork
+      type: image
+      required: false
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+- name: band
+  label: 03 · Biography & members
+  type: file
+  path: data/band.json
+  format: json
+  fields:
+  - name: bio
+    label: Band biography (blank lines separate paragraphs)
+    type: text
+  - name: bioSource
+    label: Optional source / artist biography link
+    type: string
+    required: false
+    options:
+      pattern: ^https?://[^\s]+$
+  - name: members
+    label: Band members
+    type: object
+    list: true
+    fields:
+    - name: name
+      label: Member name
+      type: string
+      required: true
+    - name: role
+      label: Role / instrument
+      type: string
+      required: true
+    - name: bio
+      label: Member biography
+      type: text
+- name: shows
+  label: 04 · Shows & events
+  type: file
+  path: data/shows.json
+  format: json
+  fields:
+  - name: events
+    label: Shows (add upcoming dates here)
+    type: object
+    list: true
+    fields:
+    - name: title
+      label: Show / event name
+      type: string
+      required: true
+    - name: date
+      label: Show date
+      type: date
+      required: true
+      default: ''
+      options:
+        format: yyyy-MM-dd
+    - name: location
+      label: Venue and city
+      type: string
+      required: true
+    - name: url
+      label: Optional ticket / event URL
+      type: string
+      required: false
+      options:
+        pattern: ^https?://[^\s]+$
+    - name: status
+      label: 'Status note (for example: Tickets available)'
+      type: string
+    - name: archived
+      label: Keep in archive, not upcoming
+      type: boolean
+      default: false
+- name: merch
+  label: 05 · Merch
+  type: file
+  path: data/merch.json
+  format: json
+  fields:
+  - name: products
+    label: Merch items
+    type: object
+    list: true
+    fields:
+    - name: name
+      label: Item name
+      type: string
+      required: true
+    - name: price
+      label: Displayed price (include currency, e.g. $30.00)
+      type: string
+      required: true
+    - name: front
+      label: Front / main image
+      type: image
+      required: true
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+    - name: back
+      label: Back / alternate image (optional)
+      type: image
+      required: false
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+- name: gallery
+  label: 06 · Gallery & images
+  type: file
+  path: data/gallery.json
+  format: json
+  fields:
+  - name: gallery
+    label: Gallery entries
+    type: object
+    list: true
+    fields:
+    - name: title
+      label: Image title
+      type: string
+      required: true
+    - name: src
+      label: Image
+      type: image
+      required: true
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+    - name: alt
+      label: Describe the image for screen readers
+      type: string
+      required: true
+    - name: category
+      label: Category
+      type: select
+      required: true
+      default: Visual
+      options:
+        values:
+        - Portrait
+        - Visual
+        - Live
+        - Artwork
+- name: videos
+  label: 07 · Videos
+  type: file
+  path: data/videos.json
+  format: json
+  fields:
+  - name: videos
+    label: Videos (empty = show the official YouTube channel)
+    type: object
+    list: true
+    fields:
+    - name: title
+      label: Video title
+      type: string
+      required: true
+    - name: url
+      label: Official video URL
+      type: string
+      required: true
+      options:
+        pattern: ^https?://[^\s]+$
+    - name: image
+      label: Thumbnail image (optional)
+      type: image
+      required: false
+      options:
+        media: images
+        path: assets/uploads
+        extensions:
+        - png
+        - jpg
+        - jpeg
+        - webp
+        - avif
+    - name: description
+      label: Short description
+      type: text
+settings:
+  content:
+    merge: true

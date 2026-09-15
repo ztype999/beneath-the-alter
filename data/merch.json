@@ -1,0 +1,25 @@
+{
+  "products": [
+    {
+      "name": "Snow Washed Oversized Cotton T-Shirt",
+      "price": "$30.00",
+      "front": "./assets/source-01.webp",
+      "back": "./assets/source-02.webp",
+      "originalUrl": "https://ztypecorporate.wixsite.com/snow-washed-oversized-cotton-t-shirt"
+    },
+    {
+      "name": "Essential Heavyweight Fleece Hoodie",
+      "price": "$65.00",
+      "front": "./assets/source-03.webp",
+      "back": "./assets/source-04.webp",
+      "originalUrl": "https://ztypecorporate.wixsite.com/essential-heavyweight-fleece-hoodie"
+    },
+    {
+      "name": "Sunfade Hand-Frayed Faux Two-Piece T-Shirt",
+      "price": "$45.00",
+      "front": "./assets/source-05.webp",
+      "back": "./assets/source-06.webp",
+      "originalUrl": "https://ztypecorporate.wixsite.com/sunfade-hand-frayed-faux-two-piece-t-shirt"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "BENEATH THE ALTER",
+  "sourceName": "Beneath The Alter",
+  "sourceUrl": "https://ztypecorporate.wixsite.com/beneath-the-alter",
+  "sourceChecked": "2026-09-15",
+  "genre": "Hypermetal / Postpunk",
+  "location": "New York City",
+  "mood": "Distorted",
+  "email": "Morningstarmedia@yandex.com",
+  "cashapp": "https://cash.app/$beneaththealter",
+  "socials": [
+    {
+      "name": "Spotify",
+      "url": "https://open.spotify.com/artist/5s6nmujVhIeRD2x4sXGXVJ"
+    },
+    {
+      "name": "Instagram",
+      "url": "https://www.instagram.com/beneaththealter/"
+    },
+    {
+      "name": "YouTube",
+      "url": "https://www.youtube.com/@BeneaththeAltar"
+    },
+    {
+      "name": "TikTok",
+      "url": "https://www.tiktok.com/@beneaththealter"
+    }
+  ],
+  "brandLine1": "Beneath",
+  "brandLine2": "the Alter",
+  "taglineTop": "FROM NEW YORK.",
+  "taglineBottom": "INTO THE NOISE.",
+  "heroPortrait": "./assets/portrait-cutout.webp",
+  "profilePortrait": "./assets/portrait.webp",
+  "accent": "#ff2873"
+}

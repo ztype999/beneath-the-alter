@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "title": "Rock the Arena with Beneath the Alter",
+      "url": "https://ztypecorporate.wixsite.com/beneath-the-alter/event-details/rock-the-arena-with-beneath-the-alter",
+      "date": "2026-08-22",
+      "location": "Electric Arena, Austin TX",
+      "status": "Tickets are not on sale",
+      "archived": true
+    },
+    {
+      "title": "Acoustic Night with Beneath the Alter",
+      "url": "https://ztypecorporate.wixsite.com/beneath-the-alter/event-details/acoustic-night-with-beneath-the-alter",
+      "date": "2026-08-22",
+      "location": "SoundStage Studio, New York NY",
+      "status": "Registration is closed",
+      "archived": true
+    },
+    {
+      "title": "Exclusive Merchandise Launch Party",
+      "url": "https://ztypecorporate.wixsite.com/beneath-the-alter/event-details/exclusive-merchandise-launch-party",
+      "date": "2026-08-22",
+      "location": "Merchandise Hall, Los Angeles CA",
+      "status": "Registration is closed",
+      "archived": true
+    }
+  ]
+}

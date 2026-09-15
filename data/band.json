@@ -1,0 +1,21 @@
+{
+  "bio": "Beneath the Alter is a hypermetal / postpunk band from New York City. Started by vocalist and producer Xavier Bravo as a cover band in 2018, its first shows were at family parties and church.\n\nXavier is joined by his brother, rhythm guitarist Zane Bravo, and lead guitarist Sebas, who began working with the band in 2023. From riffs and lyrics to recording, this is music built together.",
+  "members": [
+    {
+      "name": "Xavier Bravo",
+      "role": "Lead vocals / Production",
+      "bio": "Born and raised in NYC. Producing music and singing since age 11; started the band in 2018."
+    },
+    {
+      "name": "Zane Bravo",
+      "role": "Rhythm guitar",
+      "bio": "Born and raised in NYC. Xavier’s brother, contributing riffs and lyrics. Playing guitar since age 15."
+    },
+    {
+      "name": "Sebas",
+      "role": "Lead guitar",
+      "bio": "Born and raised in NYC. Began collaborating with Beneath the Alter in 2023."
+    }
+  ],
+  "bioSource": "https://open.spotify.com/artist/5s6nmujVhIeRD2x4sXGXVJ"
+}
