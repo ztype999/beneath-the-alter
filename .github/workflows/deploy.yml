@@ -1,0 +1,54 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 9 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout website
+        uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Build and validate the website
+        env:
+          SITE_URL: https://ztype999.github.io/beneath-the-alter
+        run: bun build/build-site.ts .
+      - name: Package public website files
+        run: |
+          mkdir -p _site
+          cp -- *.html *.css *.js robots.txt sitemap.xml _site/
+          cp -r assets admin _site/
+          touch _site/.nojekyll
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
