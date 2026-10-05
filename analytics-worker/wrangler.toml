@@ -1,0 +1,20 @@
+name = "bta-analytics"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[observability]
+enabled = true
+
+[vars]
+GITHUB_ALLOWED_LOGIN = "ztype999"
+SITE_ORIGIN = "https://ztype999.github.io"
+# Where the dashboard lives after login. This is a GitHub Pages project site,
+# so the path includes /beneath-the-alter/.
+DASHBOARD_URL = "https://ztype999.github.io/beneath-the-alter/admin/analytics.html"
+# Must match the Authorization callback URL in your GitHub OAuth App.
+GITHUB_CALLBACK_URL = "https://YOUR-WORKER-DOMAIN.workers.dev/auth/callback"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bta-analytics"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

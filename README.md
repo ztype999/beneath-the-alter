@@ -30,3 +30,9 @@ Edit `data/*.json` for content, `build/site/*.ts` for templates, and `site.css`/
 - Original Wix event records remain archived. No invented dates or ticket sales.
 - Existing social handles are preserved, including YouTube’s `@BeneaththeAltar`.
 - Band photos, art, and recordings remain their owners’ property. Font licenses are in `licenses/`.
+
+## Analytics
+
+A private, privacy-first analytics dashboard lives at `admin/analytics.html` and is restricted to the GitHub account `ztype999`. The public tracker is `analytics.js` (configured in `analytics-config.js`), and the API is the Cloudflare Worker in `analytics-worker/`.
+
+See [`ANALYTICS.md`](./ANALYTICS.md) for deployment steps. Tracking stays disabled until a Worker URL is set in `analytics-config.js`. See [`privacy.html`](./privacy.html) for what is and isn’t collected.

@@ -1,3 +1,6 @@
 _site/
 node_modules/
 .DS_Store
+analytics-worker/.dev.vars
+analytics-worker/.wrangler/
+.wrangler/

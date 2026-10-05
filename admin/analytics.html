@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0c0b0d">
+  <title>Analytics — BENEATH THE ALTER</title>
+  <link rel="icon" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="./analytics.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">BENEATH THE ALTER // PRIVATE SYSTEM</div>
+        <h1>Visitor Analytics</h1>
+      </div>
+      <div class="actions">
+        <span id="identity">Checking session...</span>
+        <a class="back" href="../admin/">CONTROL ROOM</a>
+        <button id="logout">LOG OUT</button>
+      </div>
+    </header>
+
+    <section class="controls">
+      <label>Range
+        <select id="range">
+          <option value="24h">24 hours</option>
+          <option value="7d" selected>7 days</option>
+          <option value="30d">30 days</option>
+          <option value="90d">90 days</option>
+        </select>
+      </label>
+      <button id="refresh">REFRESH</button>
+      <span id="status" class="status" role="status"></span>
+    </section>
+
+    <section class="cards">
+      <article><span>VISITORS</span><strong id="visitors">—</strong></article>
+      <article><span>SESSIONS</span><strong id="sessions">—</strong></article>
+      <article><span>PAGE VIEWS</span><strong id="pageviews">—</strong></article>
+      <article><span>RETURNING</span><strong id="returning">—</strong></article>
+      <article><span>AVG. DURATION</span><strong id="duration">—</strong></article>
+    </section>
+
+    <section class="panel">
+      <h2>Traffic timeline</h2>
+      <div id="timeline" class="bars"></div>
+    </section>
+
+    <div class="grid">
+      <section class="panel"><h2>Top pages</h2><div id="pages"></div></section>
+      <section class="panel"><h2>Referrers</h2><div id="referrers"></div></section>
+      <section class="panel"><h2>Countries</h2><div id="countries"></div></section>
+      <section class="panel"><h2>Devices</h2><div id="devices"></div></section>
+      <section class="panel"><h2>Browsers</h2><div id="browsers"></div></section>
+      <section class="panel"><h2>Events</h2><div id="events"></div></section>
+    </div>
+
+    <footer>
+      <p>Approximate geography only. This dashboard does not determine a visitor’s real age. See the <a href="../privacy.html">privacy notice</a>.</p>
+    </footer>
+  </main>
+  <script src="../analytics-config.js"></script>
+  <script src="./analytics.js"></script>
+</body>
+</html>
