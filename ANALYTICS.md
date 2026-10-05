@@ -74,6 +74,18 @@ GitHub → Settings → Developer settings → OAuth Apps → New OAuth App:
 
 Only `ztype999` is allowed in; every other account receives HTTP 403.
 
+**Already registered for this site:**
+
+- Application name: `Beneath the Alter Analytics`
+- Client ID: `Ov23lisgND0XJ2RVKC4L`
+- Redirect URI: `https://bta-analytics.beneaththealter.workers.dev/auth/callback`
+  (strict matching, no wildcards)
+- `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are both set as Worker secrets,
+  so `/auth/github` redirects to GitHub instead of returning 503.
+
+To rotate: generate a new client secret in the GitHub UI, then
+`npx wrangler secret put GITHUB_CLIENT_SECRET`.
+
 ## 3. Enable the tracker and dashboard
 
 Edit `analytics-config.js` in the repository root:
@@ -118,6 +130,15 @@ in with GitHub as `ztype999`.
 
 Never commit `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`, OAuth tokens, or D1
 credentials. Only `.dev.vars.example` is committed; `.dev.vars` is ignored.
+
+Currently set on the Worker (`npx wrangler secret list`):
+
+| Secret | Purpose |
+| --- | --- |
+| `SESSION_SECRET` | Signs the dashboard session cookie |
+| `GITHUB_CLIENT_ID` | OAuth client id |
+| `GITHUB_CLIENT_SECRET` | OAuth client secret |
+| `DASHBOARD_TOKEN` | Fallback bearer-token login for the dashboard |
 
 ## 6. Operational notes
 
