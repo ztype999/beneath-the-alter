@@ -13,6 +13,10 @@ const ALLOWED_EVENTS = new Set([
 
 const MAX_BODY_BYTES = 20 * 1024;
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
+// Raw analytics rows older than this are deleted by the scheduled purge.
+const RETENTION_DAYS = 365;
+// Soft per-IP guard so a flood of fake events cannot exhaust the D1 write quota.
+const INGEST_LIMIT_PER_MINUTE = 60;
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -205,7 +209,43 @@ async function aggregate(env, sql, range) {
   return result.results || [];
 }
 
+/*
+ * Deletes analytics rows past the retention window. Runs once a day from the
+ * cron trigger in wrangler.toml, so the privacy notice's retention promise is
+ * enforced rather than merely intended.
+ */
+async function purgeExpired(env) {
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString();
+  const result = await env.DB.prepare("DELETE FROM events WHERE created_at < ?")
+    .bind(cutoff)
+    .run();
+  return { cutoff, removed: Number(result.meta?.changes || 0) };
+}
+
+/*
+ * In-memory per-IP counter. The Origin header is trivially spoofed, so this is
+ * the only thing standing between the Worker and an event flood. It lives in
+ * isolate memory, so it is a soft guard: bounded, cheap, and never blocks a
+ * normal visitor (one person generates ~2 events a minute).
+ */
+const ingestBuckets = new Map();
+
+function ingestOverLimit(ip, now = Date.now()) {
+  if (!ip) return false;
+  if (ingestBuckets.size > 10000) ingestBuckets.clear();
+  let bucket = ingestBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + 60000 };
+    ingestBuckets.set(ip, bucket);
+  }
+  bucket.count += 1;
+  return bucket.count > INGEST_LIMIT_PER_MINUTE;
+}
+
 export default {
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(purgeExpired(env));
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
@@ -268,6 +308,9 @@ export default {
 
       if (url.pathname === "/api/ingest" && request.method === "POST") {
         if (origin && origin !== env.SITE_ORIGIN) return json({ error: "origin" }, 403, cors(env, origin));
+
+        const ip = request.headers.get("CF-Connecting-IP") || "";
+        if (ingestOverLimit(ip)) return json({ error: "rate limited" }, 429, cors(env, origin));
 
         const declared = Number(request.headers.get("Content-Length") || 0);
         if (declared > MAX_BODY_BYTES) return json({ error: "payload too large" }, 413, cors(env, origin));

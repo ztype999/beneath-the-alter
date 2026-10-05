@@ -121,13 +121,19 @@ credentials. Only `.dev.vars.example` is committed; `.dev.vars` is ignored.
 
 ## 6. Operational notes
 
-- Retention: D1 keeps events until you delete them. Add a scheduled cleanup
-  (`DELETE FROM events WHERE created_at < ...`) if you need an enforced window.
+- Retention: the Worker runs a daily cron (`schedule: 17 3 * * *`, from
+  `[triggers]` in `wrangler.toml`) that deletes events older than
+  `RETENTION_DAYS` (365) — see `purgeExpired()` in `worker.js`. Change that
+  constant to shorten or extend the window, then redeploy.
 - Session cookies: the dashboard is on GitHub Pages while the API is on
   `*.workers.dev`, so the session cookie is `SameSite=None; Secure; HttpOnly`.
   CORS is locked to `SITE_ORIGIN` and OAuth state is validated on callback.
-- Rate limiting: use Cloudflare's built-in rate-limiting rules / WAF on
-  `/api/ingest`, or bind a KV/Durable Object counter if you need per-visitor limits.
+- Rate limiting: `/api/ingest` returns `429` after `INGEST_LIMIT_PER_MINUTE`
+  (60) events from one IP in a minute, on top of the origin check and the
+  `MAX_BODY_BYTES` payload cap. The counter is per-isolate memory, so it is a
+  soft guard against casual floods, not a billing-grade limiter.
+- Schema: `idx_events_site_created` covers the dashboard's main
+  `site_id + created_at` filter. Re-apply `schema.sql` if you recreate D1.
 - Local dev: `npx wrangler dev` inside `analytics-worker` serves the API at
   `http://localhost:8787`, but `Secure` cookies mean the full OAuth flow is
   intended for production.

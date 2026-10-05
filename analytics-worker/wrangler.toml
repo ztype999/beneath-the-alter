@@ -5,6 +5,11 @@ compatibility_date = "2026-01-01"
 [observability]
 enabled = true
 
+# Daily purge of analytics rows older than RETENTION_DAYS (see worker.js),
+# which is what makes the privacy notice's retention promise true.
+[triggers]
+crons = ["17 3 * * *"]
+
 [vars]
 GITHUB_ALLOWED_LOGIN = "ztype999"
 SITE_ORIGIN = "https://ztype999.github.io"

@@ -4,3 +4,8 @@ node_modules/
 analytics-worker/.dev.vars
 analytics-worker/.wrangler/
 .wrangler/
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
