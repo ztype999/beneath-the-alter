@@ -30,7 +30,7 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build and validate the website
         env:
-          SITE_URL: https://ztype999.github.io/beneath-the-alter
+          SITE_URL: https://beneaththealter.eu.org
         run: bun build/build-site.ts .
       - name: Package public website files
         run: |

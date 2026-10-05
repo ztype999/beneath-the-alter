@@ -4,8 +4,8 @@ Responsive band website rebuilt from the original Wix site and the linked offici
 
 ## Website and management
 
-- Website: https://ztype999.github.io/beneath-the-alter/
-- Control room: https://ztype999.github.io/beneath-the-alter/admin/
+- Website: https://beneaththealter.eu.org/
+- Control room: https://beneaththealter.eu.org/admin/
 - Content editor: https://app.pagescms.org/ — sign in with GitHub, authorize this repository, and select `ztype999/beneath-the-alter`, branch `main`.
 
 The editor has seven sections: homepage/settings, music, biography/members, shows, merch, gallery, and videos. Images are stored under `assets`; new uploads go in `assets/uploads`.
@@ -17,7 +17,7 @@ Saving content starts a GitHub Actions build. Check the repository’s **Actions
 Install Bun, then run:
 
 ```sh
-SITE_URL=https://ztype999.github.io/beneath-the-alter bun build/build-site.ts .
+SITE_URL=https://beneaththealter.eu.org bun build/build-site.ts .
 python3 -m http.server 8000
 ```
 

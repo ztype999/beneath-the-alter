@@ -123,7 +123,7 @@ The access token is stored in the browser's `localStorage` under
 Merging to `main` triggers the build workflow, which regenerates every HTML page
 with the tracker and publishes `admin/` (including the dashboard).
 
-Open `https://ztype999.github.io/beneath-the-alter/admin/analytics.html` and sign
+Open `https://beneaththealter.eu.org/admin/analytics.html` and sign
 in with GitHub as `ztype999`.
 
 ## 5. Secrets
