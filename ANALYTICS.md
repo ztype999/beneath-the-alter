@@ -25,6 +25,30 @@ geography shown is approximate.
 
 ## 1. Deploy the Worker
 
+### Option A — automated (recommended)
+
+Add these repository secrets (Settings → Secrets and variables → Actions), then
+run the **Deploy analytics Worker** workflow (Actions → Run workflow):
+
+| Secret | What it is |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare token with **Workers Scripts: Edit** and **D1: Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account id |
+| `GITHUB_CLIENT_ID` | From the OAuth App you create in step 2 |
+| `GITHUB_CLIENT_SECRET` | From the OAuth App you create in step 2 |
+| `SESSION_SECRET` | Any long random string, e.g. `openssl rand -hex 32` |
+
+The workflow creates the D1 database if needed, applies the schema, deploys the
+Worker, and pushes the OAuth/session secrets. Re-runs are safe.
+
+> If `CLOUDFLARE_API_TOKEN` is missing the workflow skips cleanly with a notice,
+> so it is safe to commit before Cloudflare is set up.
+
+Once deployed, `wrangler` prints your Worker URL
+(`https://bta-analytics.<subdomain>.workers.dev`). Use it for steps 2 and 3.
+
+### Option B — manual
+
 ```sh
 cd analytics-worker
 npx wrangler login
@@ -34,7 +58,6 @@ npx wrangler d1 execute bta-analytics --remote --file=schema.sql
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put SESSION_SECRET
-# edit GITHUB_CALLBACK_URL in wrangler.toml to your Worker domain first
 npx wrangler deploy
 ```
 
@@ -45,6 +68,8 @@ The resulting Worker URL looks like `https://bta-analytics.<subdomain>.workers.d
 GitHub → Settings → Developer settings → OAuth Apps → New OAuth App:
 
 - Authorization callback URL: `https://bta-analytics.<subdomain>.workers.dev/auth/callback`
+  (the Worker derives this from its own URL automatically, so it never needs to
+  be hard-coded)
 - Scope requested by the Worker: `read:user`
 
 Only `ztype999` is allowed in; every other account receives HTTP 403.

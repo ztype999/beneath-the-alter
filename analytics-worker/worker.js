@@ -190,10 +190,14 @@ export default {
 
     try {
       if (url.pathname === "/auth/github") {
+        if (!env.GITHUB_CLIENT_ID) return htmlError("Analytics OAuth is not configured yet.", 503);
+
         const state = crypto.randomUUID();
         const auth = new URL("https://github.com/login/oauth/authorize");
         auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-        auth.searchParams.set("redirect_uri", env.GITHUB_CALLBACK_URL);
+        // Derive the callback from the Worker's own URL unless explicitly set,
+        // so deployment does not require knowing the workers.dev domain in advance.
+        auth.searchParams.set("redirect_uri", env.GITHUB_CALLBACK_URL || (url.origin + "/auth/callback"));
         auth.searchParams.set("scope", "read:user");
         auth.searchParams.set("state", state);
 

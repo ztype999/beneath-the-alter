@@ -1,0 +1,112 @@
+# Deploys the Cloudflare Worker + D1 schema for the private analytics system.
+#
+# One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   - Cloudflare token with Workers Scripts:Edit + D1:Edit
+#   CLOUDFLARE_ACCOUNT_ID  - your Cloudflare account id
+#   GITHUB_CLIENT_ID       - from the GitHub OAuth App
+#   GITHUB_CLIENT_SECRET   - from the GitHub OAuth App
+#   SESSION_SECRET         - any long random string (e.g. `openssl rand -hex 32`)
+#
+# Then run this workflow (Actions → "Deploy analytics Worker" → Run workflow).
+# It creates the D1 database if needed, applies the schema, deploys the Worker,
+# and pushes the OAuth/session secrets. Re-runs are safe.
+
+name: Deploy analytics Worker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "analytics-worker/worker.js"
+      - "analytics-worker/wrangler.toml"
+      - "analytics-worker/schema.sql"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analytics-worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Cloudflare credentials
+        id: creds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable Worker deploys."
+          fi
+
+      - name: Set up Node
+        if: steps.creds.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve D1 database id
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          NAME=bta-analytics
+          LIST=$(npx --yes wrangler@latest d1 list --json 2>/dev/null || echo '[]')
+          ID=$(node -e "try{const a=JSON.parse(process.argv[1]);const f=Array.isArray(a)?a.find(x=>x.name==='$NAME'):null;process.stdout.write((f&&(f.uuid||f.id))||'')}catch(e){}" "$LIST")
+          if [ -z "$ID" ]; then
+            echo "Creating D1 database $NAME..."
+            OUT=$(npx --yes wrangler@latest d1 create "$NAME" 2>&1 || true)
+            ID=$(printf '%s' "$OUT" | grep -oE 'database_id = "[^"]+"' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          fi
+          if [ -z "$ID" ]; then
+            echo "::error::Could not determine the D1 database id."
+            exit 1
+          fi
+          sed -i "s/REPLACE_WITH_D1_DATABASE_ID/$ID/" wrangler.toml
+          echo "D1 database id resolved."
+
+      - name: Apply D1 schema
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@latest d1 execute bta-analytics --remote --file=schema.sql
+
+      - name: Deploy Worker
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@latest deploy
+
+      - name: Push Worker secrets
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+        run: |
+          set -euo pipefail
+          for name in GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET SESSION_SECRET; do
+            value="${!name:-}"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | npx --yes wrangler@latest secret put "$name"
+            else
+              echo "::warning::$name is not set; the dashboard cannot authenticate until it is."
+            fi
+          done

@@ -11,8 +11,10 @@ SITE_ORIGIN = "https://ztype999.github.io"
 # Where the dashboard lives after login. This is a GitHub Pages project site,
 # so the path includes /beneath-the-alter/.
 DASHBOARD_URL = "https://ztype999.github.io/beneath-the-alter/admin/analytics.html"
-# Must match the Authorization callback URL in your GitHub OAuth App.
-GITHUB_CALLBACK_URL = "https://YOUR-WORKER-DOMAIN.workers.dev/auth/callback"
+# Optional. Leave commented to derive the callback from the Worker's own URL
+# (https://<your-worker>.workers.dev/auth/callback). If you set a custom domain
+# or route, uncomment and set it explicitly.
+# GITHUB_CALLBACK_URL = "https://bta-analytics.YOUR-WORKER-DOMAIN.workers.dev/auth/callback"
 
 [[d1_databases]]
 binding = "DB"
