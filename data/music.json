@@ -76,5 +76,12 @@
       "image": "./assets/release-2.webp"
     }
   ],
-  "latestReleaseUrl": "https://open.spotify.com/album/1JoUWtp8bMrn0YovlCBWG7"
+  "latestReleaseUrl": "https://open.spotify.com/album/1JoUWtp8bMrn0YovlCBWG7",
+  "streaming": [
+    { "name": "Spotify", "url": "https://open.spotify.com/artist/5s6nmujVhIeRD2x4sXGXVJ" },
+    { "name": "Apple Music", "url": "https://music.apple.com/us/artist/beneath-the-alter/1883234191" },
+    { "name": "YouTube Music", "url": "https://music.youtube.com/channel/UC1pY7vP9gDORVlGdn_CvaQg" },
+    { "name": "Amazon Music", "url": "https://music.amazon.com/artists/B0GRL6YXCV" },
+    { "name": "YouTube", "url": "https://www.youtube.com/@BeneaththeAltar" }
+  ]
 }
