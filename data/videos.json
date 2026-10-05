@@ -2,7 +2,8 @@
   "videos": [
     {
       "title": "corazon sin cara remix",
-      "url": "https://www.youtube.com/watch?v=5r1RXYe83xw"
+      "url": "https://www.youtube.com/watch?v=5r1RXYe83xw",
+      "image": "./assets/video-00.webp"
     }
   ]
 }
