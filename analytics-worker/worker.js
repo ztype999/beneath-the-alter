@@ -32,7 +32,7 @@ function cors(env, origin) {
   return {
     "Access-Control-Allow-Origin": origin === allowed ? allowed : "null",
     "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Vary": "Origin"
   };
@@ -169,8 +169,34 @@ function since(range) {
   return new Date(Date.now() - daysBack(range) * 86400000).toISOString();
 }
 
+function timingSafeEqual(a, b) {
+  const x = new TextEncoder().encode(String(a));
+  const y = new TextEncoder().encode(String(b));
+  if (x.length !== y.length) return false;
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
+/*
+ * Authenticated access via either:
+ *   1. the signed GitHub OAuth session cookie, or
+ *   2. a private dashboard access token (Worker secret DASHBOARD_TOKEN) sent as
+ *      `Authorization: Bearer <token>`. This lets the owner use the dashboard
+ *      without configuring a GitHub OAuth App.
+ */
 async function authenticated(request, env) {
-  return await readSession(env, request);
+  const session = await readSession(env, request);
+  if (session) return session;
+
+  if (env.DASHBOARD_TOKEN) {
+    const header = request.headers.get("Authorization") || "";
+    const match = header.match(/^Bearer\s+(.+)$/i);
+    if (match && timingSafeEqual(match[1].trim(), env.DASHBOARD_TOKEN)) {
+      return { login: env.GITHUB_ALLOWED_LOGIN };
+    }
+  }
+  return null;
 }
 
 async function aggregate(env, sql, range) {
@@ -303,7 +329,7 @@ export default {
           env.DB.prepare(`SELECT COUNT(DISTINCT session_id) n FROM events ${base}`).bind(since(range)).first(),
           env.DB.prepare(`SELECT COUNT(*) n FROM events ${base} AND event='page_view'`).bind(since(range)).first(),
           env.DB.prepare(`SELECT COUNT(DISTINCT visitor_id) n FROM events ${base} AND visitor_id IN (
-             SELECT visitor_id FROM events ${base} GROUP BY visitor_id HAVING MIN(created_at) < ?
+             SELECT visitor_id FROM events GROUP BY visitor_id HAVING MIN(created_at) < ?
           )`).bind(since(range), since(range)).first(),
           env.DB.prepare(`SELECT AVG(duration) avg FROM (
              SELECT session_id, (julianday(MAX(created_at))-julianday(MIN(created_at)))*86400 duration

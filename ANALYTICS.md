@@ -89,6 +89,23 @@ window.BTA_ANALYTICS_CONFIG = {
 
 While `endpoint` is empty, tracking is disabled and the site behaves normally.
 
+### Signing in to the dashboard
+
+The dashboard supports two ways in:
+
+1. **Access token (no extra setup).** A random token is stored as the Worker
+   secret `DASHBOARD_TOKEN`. Open the dashboard, paste the token, and it is
+   remembered in that browser only. Rotate it any time with
+   `npx wrangler secret put DASHBOARD_TOKEN`.
+2. **GitHub OAuth (optional).** Create the GitHub OAuth App (step 2), add
+   `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Worker secrets, and the
+   dashboard shows "Sign in with GitHub". Only the account in
+   `GITHUB_ALLOWED_LOGIN` (`ztype999`) is accepted.
+
+Both methods grant the same read access and can be enabled at the same time.
+The access token is stored in the browser's `localStorage` under
+`bta_dashboard_token`; clearing site data removes it.
+
 ## 4. Deploy the site
 
 Merging to `main` triggers the build workflow, which regenerates every HTML page

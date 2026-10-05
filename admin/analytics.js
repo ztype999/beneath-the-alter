@@ -6,6 +6,13 @@
     (cfg.endpoint ? new URL(cfg.endpoint).origin : "");
 
   const $ = id => document.getElementById(id);
+  const TOKEN_KEY = "bta_dashboard_token";
+
+  const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (_) { return ""; } };
+  const setToken = v => {
+    try { v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY); } catch (_) {}
+  };
+
   const status = (msg, isError) => {
     const el = $("status");
     if (el) {
@@ -14,6 +21,23 @@
     }
   };
 
+  function showGate(message) {
+    const gate = $("gate");
+    if (!gate) return;
+    gate.hidden = false;
+    const err = $("gate-error");
+    if (err) err.textContent = message || "";
+    const oauth = $("oauth-link");
+    if (oauth && API) oauth.href = API + "/auth/github";
+    const input = $("token-input");
+    if (input) input.focus();
+  }
+
+  function hideGate() {
+    const gate = $("gate");
+    if (gate) gate.hidden = true;
+  }
+
   if (!API) {
     $("identity").textContent = "NOT CONFIGURED";
     status("Set the Worker URL in analytics-config.js to enable the dashboard.", true);
@@ -21,14 +45,20 @@
   }
 
   async function api(path, options) {
+    const token = getToken();
     const res = await fetch(API + path, {
       ...options,
       credentials: "include",
-      headers: { "Content-Type": "application/json", ...(options && options.headers || {}) }
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: "Bearer " + token } : {}),
+        ...(options && options.headers || {})
+      }
     });
     if (res.status === 401) {
-      location.href = API + "/auth/github";
-      throw new Error("Authentication required");
+      const err = new Error("unauthorized");
+      err.status = 401;
+      throw err;
     }
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -80,6 +110,7 @@
         api(`/api/events?range=${range}`)
       ]);
 
+    hideGate();
     $("identity").textContent = `SIGNED IN: ${me.login}`;
     $("visitors").textContent = fmt(summary.visitors);
     $("sessions").textContent = fmt(summary.sessions);
@@ -105,20 +136,39 @@
     status(`Updated ${new Date().toLocaleTimeString()}`);
   }
 
+  function fail(err) {
+    if (err && err.status === 401) {
+      $("identity").textContent = "LOCKED";
+      status("");
+      showGate(getToken() ? "That access token was rejected." : "");
+      return;
+    }
+    console.error(err);
+    $("identity").textContent = "ERROR";
+    status("Could not load analytics. Check your Worker and connection.", true);
+  }
+
   $("refresh").onclick = () => load().catch(fail);
   $("range").onchange = () => load().catch(fail);
+
+  const tokenForm = $("token-form");
+  if (tokenForm) {
+    tokenForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const value = ($("token-input").value || "").trim();
+      if (!value) return;
+      setToken(value);
+      load().catch(fail);
+    });
+  }
+
   $("logout").onclick = async () => {
+    setToken("");
     try {
       await fetch(API + "/auth/logout", { method: "POST", credentials: "include" });
     } catch (_) {}
-    location.href = API + "/auth/github";
+    location.reload();
   };
-
-  function fail(err) {
-    console.error(err);
-    $("identity").textContent = "AUTHENTICATION REQUIRED";
-    status("Could not load analytics. Check your Worker and session.", true);
-  }
 
   load().catch(fail);
 })();

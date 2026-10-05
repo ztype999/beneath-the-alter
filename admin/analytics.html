@@ -61,6 +61,20 @@
     <footer>
       <p>Approximate geography only. This dashboard does not determine a visitor’s real age. See the <a href="../privacy.html">privacy notice</a>.</p>
     </footer>
+
+    <section id="gate" class="gate" hidden>
+      <div class="gate-box">
+        <p class="eyebrow">RESTRICTED ACCESS</p>
+        <h2>Unlock dashboard</h2>
+        <p>Paste your private access token. It is stored only in this browser.</p>
+        <form id="token-form">
+          <input id="token-input" type="password" autocomplete="off" spellcheck="false" placeholder="Access token" aria-label="Access token">
+          <button type="submit">UNLOCK</button>
+        </form>
+        <a class="micro" id="oauth-link" href="#">OR SIGN IN WITH GITHUB ↗</a>
+        <p id="gate-error" class="status error" role="status"></p>
+      </div>
+    </section>
   </main>
   <script src="../analytics-config.js"></script>
   <script src="./analytics.js"></script>

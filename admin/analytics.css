@@ -56,6 +56,38 @@ button:hover { border-color: var(--accent); cursor: pointer; }
 .row span:last-child { color: var(--accent); flex: none; }
 footer { color: var(--muted); font-size: 11px; padding: 25px 0; line-height: 1.8; }
 footer a { color: var(--accent); }
+.gate {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7,6,8,.82);
+  backdrop-filter: blur(3px);
+  z-index: 20;
+}
+.gate[hidden] { display: none; }
+.gate-box {
+  width: min(440px, 100%);
+  padding: 26px;
+  background: linear-gradient(145deg, #1b141c, #0f0b10);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 40px rgba(255,40,115,.18);
+}
+.gate-box h2 { margin: 8px 0 12px; text-transform: uppercase; letter-spacing: .08em; }
+.gate-box p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+.gate-box form { display: flex; gap: 10px; margin-bottom: 14px; }
+.gate-box input {
+  flex: 1;
+  background: #151515;
+  color: var(--text);
+  border: 1px solid #444;
+  padding: 10px 12px;
+  font: inherit;
+}
+.gate-box .micro { color: var(--muted); text-decoration: none; font-size: 11px; letter-spacing: .08em; }
+.gate-box .micro:hover { color: var(--accent); }
+.gate-box .status { display: block; margin-top: 12px; }
 @media (max-width: 800px) {
   .shell { padding: 15px; }
   .topbar { display: block; }
