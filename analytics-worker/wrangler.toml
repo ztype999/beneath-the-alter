@@ -19,4 +19,4 @@ DASHBOARD_URL = "https://ztype999.github.io/beneath-the-alter/admin/analytics.ht
 [[d1_databases]]
 binding = "DB"
 database_name = "bta-analytics"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "37d70f13-677c-40a9-a0c3-861b25be1543"

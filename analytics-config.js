@@ -12,8 +12,8 @@
  * Never put secrets (GitHub client secret, session secret, tokens) in this file.
  */
 window.BTA_ANALYTICS_CONFIG = {
-  endpoint: "",
-  apiBase: "",
+  endpoint: "https://bta-analytics.beneaththealter.workers.dev/api/ingest",
+  apiBase: "https://bta-analytics.beneaththealter.workers.dev",
   siteId: "beneath-the-alter",
   enabled: true
 };
