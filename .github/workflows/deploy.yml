@@ -31,6 +31,10 @@ jobs:
       - name: Build and validate the website
         env:
           SITE_URL: https://beneaththealter.eu.org
+          # Until beneaththealter.eu.org resolves, social scrapers must be able to
+          # fetch the Open Graph image from a host that actually works. Canonical
+          # and sitemap already point at the new domain and activate on DNS.
+          SOCIAL_IMAGE_BASE: https://ztype999.github.io/beneath-the-alter
         run: bun build/build-site.ts .
       - name: Package public website files
         run: |
