@@ -77,9 +77,11 @@ contact form, the Spotify player and all content JSON keep working unchanged.
 
 ### What it adds
 
-- A first-visit BIOS boot sequence (≈3s) with an animated progress bar and a
-  **SKIP INITIALIZATION** button. Returning visits get a short boot (~750ms),
-  and `prefers-reduced-motion` gets an instant reveal.
+- A BIOS boot sequence (≈3s) with an animated progress bar and a
+  **SKIP INITIALIZATION** button, replayed in full on **every** page load —
+  refresh, in-site nav click, back button — so each screen boots the machine
+  again. `prefers-reduced-motion` gets the same boot as three summary lines
+  ending in `SYSTEM READY`, then an instant reveal.
 - A top-bar readout (`BTA-OS // ONLINE`, node, signal, live clock) inserted into
   the existing `.system-strip`, plus HUD corner brackets and a scanline sweep.
 - A simulated terminal. Type `ALTER` or `BTA3000` anywhere outside a form field,
@@ -93,7 +95,7 @@ contact form, the Spotify player and all content JSON keep working unchanged.
 | Concern | Behaviour |
 | --- | --- |
 | Boot never blocks the site | A 15s failsafe removes the overlay no matter what; if the script fails to load, no overlay is ever created |
-| `localStorage` unavailable | Flag reads and writes are wrapped, so the overlay still clears |
+| `localStorage` unavailable | The boot reads and writes no storage at all, so private mode cannot trap the overlay |
 | Reduced motion / FX toggle | `prefers-reduced-motion` **and** the site-wide `html[data-motion=off]` switch both silence the scan, cursor, reveal and animations |
 | Terminal input | Echoed with `textContent`, never parsed as markup; no `eval`, no `document.write`, no `insertAdjacentHTML` |
 | Form fields | Typing in an input, textarea or select never triggers the easter eggs |
@@ -102,9 +104,12 @@ contact form, the Spotify player and all content JSON keep working unchanged.
 
 ### Boot storage
 
-- `bta_boot_completed` — `"true"` once the sequence has run, which is what
-  shortens the next visit.
-- Removing that key restores the full first-visit boot.
+None. The boot reads and writes no storage whatsoever: it replays in full on
+every load, so there is no "seen it before" flag to go stale and nothing to
+read or clear in private mode. The `bta_boot_completed` key that the earlier
+first-visit-only version wrote is now neither read nor written — browsers that
+picked it up still carry it until they clear storage themselves, but it has no
+effect on anything.
 
 ## Important
 

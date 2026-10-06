@@ -12,45 +12,38 @@ const bootLines=[
 ["UNKNOWN SIGNAL DETECTED","warn"],["SIGNAL IDENTIFIED","accent"],["SOURCE: BENEATH_THE_ALTER","ok"],["",""],["LOADING BTA-OS","accent"]
 ];
 
-// localStorage can throw (private mode, blocked cookies). A failure here must
-// never cost us the overlay removal, so the flag is read and written defensively.
-const readFlag=()=>{try{return localStorage.getItem("bta_boot_completed")==="true"}catch{return false}};
-const writeFlag=()=>{try{localStorage.setItem("bta_boot_completed","true")}catch{}};
 function boot(){
- const already=readFlag();
  const root=document.createElement("div");
  root.className="bta-boot";
  root.innerHTML='<div class="bta-boot__frame"><div class="bta-boot__head"><span>BTA-3000 // BIOS</span><span>SECURE BOOT</span></div><div class="bta-boot__screen" aria-live="polite"></div><div class="bta-boot__progress"><div class="bta-boot__bar"></div></div><div class="bta-boot__status"><span>SYSTEM INITIALIZATION</span><span class="bta-pct">0%</span></div><button class="bta-boot__skip">SKIP INITIALIZATION</button></div><div class="bta-boot__logo"><strong>BENEATH<br>THE ALTER</strong><small>SYSTEM STATUS: ONLINE // YEAR 3000</small></div>';
  document.body.prepend(root);
  const screen=root.querySelector(".bta-boot__screen"),bar=root.querySelector(".bta-boot__bar"),pct=root.querySelector(".bta-pct");
  let finished=false;
- // Full boot targets ~3s end to end, a returning visitor ~790ms, reduced motion
- // an almost instant reveal. panelMs is how long the BIOS text stays readable on
- // the short paths; logoMs/fadeS are handed to CSS so the overlay is always
- // removed just after its own animation actually ends.
- const panelMs=reduce?40:(already?120:0);
- const logoMs=reduce?60:(already?320:700);
- const fadeS=reduce?.2:(already?.26:.55);
+ // Every load replays the whole sequence - refresh, a nav click, a back
+ // button - so there is deliberately no "seen it before" shortcut. logoMs and
+ // fadeS are handed to CSS so the overlay is always removed just after its own
+ // animation actually ends. Reduced motion runs the same overlay minus the
+ // streaming: three summary lines instead of twenty-seven.
+ const logoMs=reduce?60:700;
+ const fadeS=reduce?.2:.55;
  root.style.setProperty("--bta-fade",fadeS+"s");
- // The short paths cannot spare the full 900ms logo reveal, so they get a
- // compressed one that is allowed to finish instead of being cut off mid-blur.
- if(already||reduce)root.classList.add("fast");
- // One place that renders a BIOS line, so the short paths and the full
- // sequence cannot drift apart in markup or class names.
+ // The reduced-motion panel cannot spare the full 900ms logo reveal, so it gets
+ // a compressed one that finishes instead of being cut off mid-blur.
+ if(reduce)root.classList.add("fast");
+ // One place that renders a BIOS line, so both paths share markup and class names.
  const addLine=(txt,kind)=>{const el=document.createElement("div");el.className="bta-boot__line "+(kind||"");el.textContent="> "+txt;screen.append(el);screen.scrollTop=screen.scrollHeight;return el};
- const finish=()=>{if(finished)return;finished=true;writeFlag();root.classList.add("logo-phase");setTimeout(()=>{root.classList.add("is-done");document.body.classList.add("bta-boot-enabled");setTimeout(()=>root.remove(),Math.round(fadeS*1000)+40)},logoMs)};
+ const finish=()=>{if(finished)return;finished=true;root.classList.add("logo-phase");setTimeout(()=>{root.classList.add("is-done");setTimeout(()=>root.remove(),Math.round(fadeS*1000)+40)},logoMs)};
  root.querySelector(".bta-boot__skip").onclick=finish;
  // Hard failsafe: whatever happens below, the overlay is gone within 15s so the
  // site underneath is always reachable.
  setTimeout(()=>root.remove(),15000);
- if(reduce||already){
-  // A blank BIOS panel for a few frames reads like a glitch, and the spec asks
-  // for SYSTEM READY on the short paths. Render a summary rather than replaying
-  // the whole sequence, so there is always something on screen before the logo.
+ if(reduce){
+  // Reduced motion still boots, it just does not stream. Show the header, the
+  // system name and SYSTEM READY, then reveal with no scrolling required.
   addLine("BTA-3000 BIOS v.3000.7","accent");
-  addLine(already?"RESUMING FROM LAST SESSION":"BENEATH THE ALTER SYSTEMS","ok");
+  addLine("BENEATH THE ALTER SYSTEMS","ok");
   addLine("SYSTEM READY","accent");
-  bar.style.width="100%";pct.textContent="100%";setTimeout(finish,panelMs);return;
+  bar.style.width="100%";pct.textContent="100%";setTimeout(finish,40);return;
  }
  let i=0;
  const tick=()=>{if(finished)return;if(i<bootLines.length){const [txt,kind]=bootLines[i++];addLine(txt,kind)}
