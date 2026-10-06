@@ -54,7 +54,13 @@ cp -r assets admin edge/dist/
 npx wrangler deploy --config edge/wrangler.jsonc
 ```
 
-Analytics is intentionally restricted to the GitHub Pages origin: `SITE_ORIGIN` in `analytics-worker/wrangler.toml` allows `https://ztype999.github.io` only, so page views on the edge mirror are not counted.
+Page-view **tracking** is restricted to the GitHub Pages origin: `/api/ingest`
+in `worker.js` accepts `SITE_ORIGIN` (`https://ztype999.github.io`) only, so
+page views on the edge mirror are still not counted. The **dashboard** can be
+opened from any origin listed in `DASHBOARD_ORIGINS` (`https://ztype999.github.io`,
+the edge mirror, and `https://beneaththealter.eu.org`) — see `readableOrigins()`
+in `worker.js`. Every other origin receives `Access-Control-Allow-Origin: null`
+and the browser discards the response.
 
 ## Important
 

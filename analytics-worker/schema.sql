@@ -30,3 +30,17 @@ CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id);
 CREATE INDEX IF NOT EXISTS idx_events_event ON events(event);
 CREATE INDEX IF NOT EXISTS idx_events_path ON events(path);
 CREATE INDEX IF NOT EXISTS idx_events_country ON events(country);
+
+-- Failed dashboard logins, keyed by client IP. DASHBOARD_TOKEN is a short
+-- memorable password rather than a 160-bit random token, so it needs
+-- throttling. This deliberately lives in D1 rather than isolate memory: a
+-- burst of requests from one address is spread across several isolates, each
+-- with its own Map, so an in-memory counter never fires (proven against both
+-- the auth and ingest limiters). D1 is a single shared store, so the count
+-- survives that scatter.
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  ip TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  fails INTEGER NOT NULL DEFAULT 0,
+  last_value TEXT
+);

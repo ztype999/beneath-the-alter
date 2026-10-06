@@ -13,6 +13,10 @@ crons = ["17 3 * * *"]
 [vars]
 GITHUB_ALLOWED_LOGIN = "ztype999"
 SITE_ORIGIN = "https://ztype999.github.io"
+# Extra origins allowed to READ dashboard responses (worker.js readableOrigins).
+# Deliberately does not affect /api/ingest, which stays locked to SITE_ORIGIN,
+# so page views from these origins are still not counted.
+DASHBOARD_ORIGINS = "https://www.beneaththealter.workers.dev,https://beneaththealter.eu.org"
 # Where the dashboard lives after login. This is a GitHub Pages project site,
 # so the path includes /beneath-the-alter/.
 DASHBOARD_URL = "https://ztype999.github.io/beneath-the-alter/admin/analytics.html"

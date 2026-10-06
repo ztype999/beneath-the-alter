@@ -17,6 +17,15 @@ const SESSION_TTL_SECONDS = 60 * 60 * 12;
 const RETENTION_DAYS = 365;
 // Soft per-IP guard so a flood of fake events cannot exhaust the D1 write quota.
 const INGEST_LIMIT_PER_MINUTE = 60;
+/*
+ * Distinct wrong passwords accepted per IP per minute. DASHBOARD_TOKEN is a
+ * short memorable passphrase rather than a 160-bit random token, so unlike a
+ * token it is guessable and needs throttling. Failures are deduplicated by the
+ * value presented, because the dashboard fires nine parallel API calls on every
+ * load — counting those separately would lock the real owner out after one
+ * typo. At 8/min a full 10^9 sweep from a single address takes ~238 years.
+ */
+const AUTH_LIMIT_PER_MINUTE = 8;
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -31,10 +40,23 @@ const json = (data, status = 200, extra = {}) =>
 const escapeHtml = s =>
   String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// Origins allowed to *read* dashboard responses. Ingest keeps its own stricter
+// gate (SITE_ORIGIN only, see /api/ingest), so widening this list lets the
+// dashboard open from another of this site's own origins without letting it
+// report page views from there. SITE_ORIGIN is always included.
+function readableOrigins(env) {
+  const extra = String(env.DASHBOARD_ORIGINS || "")
+    .split(",")
+    .map(s => s.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+  return [...new Set([String(env.SITE_ORIGIN || "").replace(/\/+$/, ""), ...extra].filter(Boolean))];
+}
+
 function cors(env, origin) {
-  const allowed = env.SITE_ORIGIN;
+  const normalized = String(origin || "").replace(/\/+$/, "");
+  const allowed = readableOrigins(env).includes(normalized) ? normalized : "null";
   return {
-    "Access-Control-Allow-Origin": origin === allowed ? allowed : "null",
+    "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
@@ -242,6 +264,61 @@ function ingestOverLimit(ip, now = Date.now()) {
   return bucket.count > INGEST_LIMIT_PER_MINUTE;
 }
 
+/*
+ * DASHBOARD_TOKEN is a short memorable password rather than a 160-bit random
+ * token, so unlike ingest it is genuinely guessable and must be throttled.
+ *
+ * The counter lives in D1, not isolate memory. A burst from one address is
+ * spread across several isolates, each with its own Map, so the in-memory
+ * version never accumulated enough strikes to fire — demonstrated against both
+ * this limiter and the ingest one, which still has that flaw. D1 is a single
+ * shared store, so the count survives the scatter.
+ *
+ * Failures are deduplicated against the previously presented value because the
+ * dashboard fires nine parallel calls per load; counting those separately would
+ * lock the real owner out after a single typo. At 8 distinct values a minute, a
+ * full 10^9 sweep from one address takes about 238 years.
+ */
+const AUTH_WINDOW_MS = 60000;
+
+async function authState(env, ip) {
+  if (!ip) return null;
+  return env.DB.prepare(
+    "SELECT fails, window_start FROM auth_attempts WHERE ip = ?"
+  ).bind(ip).first();
+}
+
+function authIsLocked(state) {
+  return !!state && Date.now() - state.window_start <= AUTH_WINDOW_MS
+    && state.fails >= AUTH_LIMIT_PER_MINUTE;
+}
+
+async function recordAuthFailure(env, ip, presented) {
+  if (!ip) return;
+  const now = Date.now();
+  const value = String(presented || "").slice(0, 64);
+  // One atomic UPSERT: the window may have rolled over, the value may repeat,
+  // and concurrent guesses must not clobber each other. Every CASE reads the
+  // pre-update row, so an expired window resets to a single strike rather than
+  // carrying the old total forward.
+  await env.DB.prepare(`
+    INSERT INTO auth_attempts (ip, window_start, fails, last_value)
+    VALUES (?1, ?2, 1, ?3)
+    ON CONFLICT(ip) DO UPDATE SET
+      window_start = CASE WHEN (?2 - auth_attempts.window_start) > ${AUTH_WINDOW_MS} THEN ?2 ELSE auth_attempts.window_start END,
+      fails = CASE
+        WHEN (?2 - auth_attempts.window_start) > ${AUTH_WINDOW_MS} THEN 1
+        WHEN auth_attempts.last_value = ?3 THEN auth_attempts.fails
+        ELSE auth_attempts.fails + 1
+      END,
+      last_value = ?3
+  `).bind(ip, now, value).run();
+}
+
+async function clearAuthFailures(env, ip) {
+  await env.DB.prepare("DELETE FROM auth_attempts WHERE ip = ?").bind(ip).run();
+}
+
 export default {
   async scheduled(_event, env, ctx) {
     ctx.waitUntil(purgeExpired(env));
@@ -356,8 +433,27 @@ export default {
         return json({ ok: true }, 202, cors(env, origin));
       }
 
+      const clientIp = request.headers.get("CF-Connecting-IP") || "";
+      const bearer = (request.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/i);
+
+      // Read the durable counter before comparing anything: a lockout that only
+      // changed the response code would still let a sweep test every guess.
+      let priorFailures = null;
+      if (bearer) {
+        priorFailures = await authState(env, clientIp);
+        if (authIsLocked(priorFailures)) {
+          return json({ error: "too many attempts" }, 429, cors(env, origin));
+        }
+      }
+
       const session = await authenticated(request, env);
-      if (!session) return json({ error: "unauthorized" }, 401, cors(env, origin));
+      if (!session) {
+        if (bearer) await recordAuthFailure(env, clientIp, bearer[1].trim());
+        return json({ error: "unauthorized" }, 401, cors(env, origin));
+      }
+      // Cleared only when this IP had recorded failures, so an ordinary
+      // dashboard load costs one read and no writes.
+      if (priorFailures) await clearAuthFailures(env, clientIp);
 
       if (url.pathname === "/api/me") {
         return json({ login: session.login }, 200, cors(env, origin));

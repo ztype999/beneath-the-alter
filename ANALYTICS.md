@@ -105,10 +105,11 @@ While `endpoint` is empty, tracking is disabled and the site behaves normally.
 
 The dashboard supports two ways in:
 
-1. **Access token (no extra setup).** A random token is stored as the Worker
-   secret `DASHBOARD_TOKEN`. Open the dashboard, paste the token, and it is
-   remembered in that browser only. Rotate it any time with
-   `npx wrangler secret put DASHBOARD_TOKEN`.
+1. **Password (no extra setup).** The gate accepts whatever value is held in
+   the Worker secret `DASHBOARD_TOKEN`. Open the dashboard, type it once, and it
+   is remembered in that browser only. Rotate it any time with
+   `npx wrangler secret put DASHBOARD_TOKEN`. Failed attempts are throttled —
+   see "Failed-attempt lockout" below.
 2. **GitHub OAuth (optional).** Create the GitHub OAuth App (step 2), add
    `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Worker secrets, and the
    dashboard shows "Sign in with GitHub". Only the account in
@@ -118,16 +119,58 @@ Both methods grant the same read access and can be enabled at the same time.
 The access token is stored in the browser's `localStorage` under
 `bta_dashboard_token`; clearing site data removes it.
 
+### Which origins may open the dashboard
+
+The API is cross-origin to the site, so the browser enforces CORS before the
+dashboard can read anything. `DASHBOARD_ORIGINS` in `wrangler.toml` lists the
+origins allowed to read:
+
+| Origin | Read dashboard | Report page views |
+| --- | --- | --- |
+| `https://ztype999.github.io` | yes | **yes** (the only one) |
+| `https://www.beneaththealter.workers.dev` | yes | no — HTTP 403 |
+| `https://beneaththealter.eu.org` | yes | no — HTTP 403 |
+| anything else | `null`, blocked | HTTP 403 |
+
+Opening the dashboard from an origin that is not listed makes every `/api/*`
+call return `Access-Control-Allow-Origin: null`; the server still sends 200 with
+data, but the browser discards it and the gate never lifts. Add an origin to
+`DASHBOARD_ORIGINS` and redeploy to allow it. Tracking is gated separately and
+independently by `SITE_ORIGIN`.
+
+### Failed-attempt lockout
+
+Wrong passwords are counted in the `auth_attempts` D1 table (defined in
+`schema.sql`), keyed by client IP, and expire after `AUTH_WINDOW_MS` (60 s).
+Once one address presents `AUTH_LIMIT_PER_MINUTE` **distinct** wrong values
+inside that window, the Worker answers HTTP 429 for every attempt — including a
+correct password — until the window lapses. A successful login clears the row.
+
+Two details matter if you ever change this:
+
+- The counter lives in D1, not isolate memory. A burst of requests from one
+  address is spread across several Worker isolates, each with its own `Map`, so
+  an in-memory counter never accumulates enough strikes to fire. This was
+  demonstrated against both the auth and the ingest limiter.
+- Strikes are deduplicated against the previously presented value, because the
+  dashboard fires nine parallel API calls per load. Counting those separately
+  would lock the owner out after a single typo.
+
+If the API returns `{"error":"too many attempts"}`, wait a minute and sign in
+again — nothing is lost, and the row clears on the next successful login.
+
 ## 4. Deploy the site
 
 Merging to `main` triggers the build workflow, which regenerates every HTML page
 with the tracker and publishes `admin/` (including the dashboard).
 
-Open `https://beneaththealter.eu.org/admin/analytics.html` and unlock it with
-your `DASHBOARD_TOKEN`, or choose **OR SIGN IN WITH GITHUB** to authenticate as
-`ztype999`. The dashboard renders nothing until one of those succeeds — the gate
-is visible from first paint and every `/api/*` call returns HTTP 401 without a
-valid credential.
+Open `https://ztype999.github.io/beneath-the-alter/admin/analytics.html` and
+unlock it with your `DASHBOARD_TOKEN` value, or choose **OR SIGN IN WITH
+GITHUB** to authenticate as `ztype999`. Once `beneaththealter.eu.org` resolves,
+`https://beneaththealter.eu.org/admin/analytics.html` is the same dashboard.
+The dashboard renders nothing until one of those succeeds — the gate is visible
+from first paint and every `/api/*` call returns HTTP 401 without a valid
+credential.
 
 ## 5. Secrets
 
@@ -141,7 +184,7 @@ Currently set on the Worker (`npx wrangler secret list`):
 | `SESSION_SECRET` | Signs the dashboard session cookie |
 | `GITHUB_CLIENT_ID` | OAuth client id |
 | `GITHUB_CLIENT_SECRET` | OAuth client secret |
-| `DASHBOARD_TOKEN` | Fallback bearer-token login for the dashboard |
+| `DASHBOARD_TOKEN` | Password accepted by the dashboard gate — never commit it |
 
 ## 6. Operational notes
 
