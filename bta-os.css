@@ -19,6 +19,9 @@ body.bta-os{background:#020403}
 .bta-boot__logo strong{font-family:var(--gothic,serif);font-size:clamp(52px,11vw,150px);line-height:.72;color:#eafff0;text-shadow:0 0 20px rgba(57,255,136,.28);letter-spacing:-.05em}
 .bta-boot__logo small{font:10px var(--mono,monospace);letter-spacing:.35em;margin-top:28px;color:var(--bta-green)}
 .bta-boot.logo-phase .bta-boot__frame{opacity:0;transition:opacity .3s}.bta-boot.logo-phase .bta-boot__logo{opacity:1;animation:btaLogo .9s steps(5,end)}
+/* Returning and reduced-motion visits only hold the logo briefly, so the
+   reveal runs compressed rather than being clipped part-way through. */
+.bta-boot.fast.logo-phase .bta-boot__logo{animation-duration:.28s}
 /* Keep the frame hidden once the logo takes over: dropping logo-phase while
    is-done starts would flash the BIOS frame back for a frame during the fade. */
 .bta-boot.is-done .bta-boot__frame{opacity:0}

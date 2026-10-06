@@ -24,20 +24,36 @@ function boot(){
  document.body.prepend(root);
  const screen=root.querySelector(".bta-boot__screen"),bar=root.querySelector(".bta-boot__bar"),pct=root.querySelector(".bta-pct");
  let finished=false;
- // Full boot targets ~3s end to end, a returning visitor ~750ms, reduced motion
- // an almost instant reveal. The fade length is handed to CSS so the overlay is
- // always removed just after its own animation actually ends.
- const logoMs=reduce?60:(already?300:700);
- const fadeS=reduce?.2:(already?.3:.55);
+ // Full boot targets ~3s end to end, a returning visitor ~790ms, reduced motion
+ // an almost instant reveal. panelMs is how long the BIOS text stays readable on
+ // the short paths; logoMs/fadeS are handed to CSS so the overlay is always
+ // removed just after its own animation actually ends.
+ const panelMs=reduce?40:(already?120:0);
+ const logoMs=reduce?60:(already?320:700);
+ const fadeS=reduce?.2:(already?.26:.55);
  root.style.setProperty("--bta-fade",fadeS+"s");
- const finish=()=>{if(finished)return;finished=true;writeFlag();root.classList.add("logo-phase");setTimeout(()=>{root.classList.add("is-done");document.body.classList.add("bta-boot-enabled");setTimeout(()=>root.remove(),Math.round(fadeS*1000)+90)},logoMs)};
+ // The short paths cannot spare the full 900ms logo reveal, so they get a
+ // compressed one that is allowed to finish instead of being cut off mid-blur.
+ if(already||reduce)root.classList.add("fast");
+ // One place that renders a BIOS line, so the short paths and the full
+ // sequence cannot drift apart in markup or class names.
+ const addLine=(txt,kind)=>{const el=document.createElement("div");el.className="bta-boot__line "+(kind||"");el.textContent="> "+txt;screen.append(el);screen.scrollTop=screen.scrollHeight;return el};
+ const finish=()=>{if(finished)return;finished=true;writeFlag();root.classList.add("logo-phase");setTimeout(()=>{root.classList.add("is-done");document.body.classList.add("bta-boot-enabled");setTimeout(()=>root.remove(),Math.round(fadeS*1000)+40)},logoMs)};
  root.querySelector(".bta-boot__skip").onclick=finish;
  // Hard failsafe: whatever happens below, the overlay is gone within 15s so the
  // site underneath is always reachable.
  setTimeout(()=>root.remove(),15000);
- if(reduce||already){bar.style.width="100%";pct.textContent="100%";setTimeout(finish,already?60:40);return}
+ if(reduce||already){
+  // A blank BIOS panel for a few frames reads like a glitch, and the spec asks
+  // for SYSTEM READY on the short paths. Render a summary rather than replaying
+  // the whole sequence, so there is always something on screen before the logo.
+  addLine("BTA-3000 BIOS v.3000.7","accent");
+  addLine(already?"RESUMING FROM LAST SESSION":"BENEATH THE ALTER SYSTEMS","ok");
+  addLine("SYSTEM READY","accent");
+  bar.style.width="100%";pct.textContent="100%";setTimeout(finish,panelMs);return;
+ }
  let i=0;
- const tick=()=>{if(finished)return;if(i<bootLines.length){const [txt,kind]=bootLines[i++],el=document.createElement("div");el.className="bta-boot__line "+kind;el.textContent="> "+txt;screen.append(el);screen.scrollTop=screen.scrollHeight}
+ const tick=()=>{if(finished)return;if(i<bootLines.length){const [txt,kind]=bootLines[i++];addLine(txt,kind)}
  const p=Math.min(99,Math.round(i/bootLines.length*100));bar.style.width=p+"%";pct.textContent=p+"%";
  if(i<bootLines.length)setTimeout(tick,40+Math.random()*50);else{bar.style.width="100%";pct.textContent="100%";setTimeout(finish,380)}};
  setTimeout(tick,180);
