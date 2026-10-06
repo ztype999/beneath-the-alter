@@ -4,8 +4,9 @@ Responsive band website rebuilt from the original Wix site and the linked offici
 
 ## Website and management
 
-- Website: https://beneaththealter.eu.org/
-- Control room: https://beneaththealter.eu.org/admin/
+- Website (canonical): https://beneaththealter.eu.org/
+- Working today: https://www.beneaththealter.workers.dev/ and https://ztype999.github.io/beneath-the-alter/ — see [Hosting](#hosting).
+- Control room: append `/admin/` to whichever address you are using.
 - Content editor: https://app.pagescms.org/ — sign in with GitHub, authorize this repository, and select `ztype999/beneath-the-alter`, branch `main`.
 
 The editor has seven sections: homepage/settings, music, biography/members, shows, merch, gallery, and videos. Images are stored under `assets`; new uploads go in `assets/uploads`.
@@ -22,6 +23,38 @@ python3 -m http.server 8000
 ```
 
 Edit `data/*.json` for content, `build/site/*.ts` for templates, and `site.css`/`site.js` for presentation and interactions. The generated HTML is standalone.
+
+## Hosting
+
+| Address | Role | Updated by |
+| --- | --- | --- |
+| `https://beneaththealter.eu.org` | Canonical domain — already in canonical URLs, `og:url` and the sitemap | Activates by itself once EU.org resolves DNS; no repo change needed |
+| `https://ztype999.github.io/beneath-the-alter` | GitHub Pages, the primary publish target | GitHub Actions on every push |
+| `https://www.beneaththealter.workers.dev` | Cloudflare edge mirror (Worker `www`, config in `edge/`) | The `edge` job, once `CLOUDFLARE_API_TOKEN` is set |
+
+Canonical, `og:url` and the sitemap point at `beneaththealter.eu.org`. Because that host does not resolve yet, the Open Graph image is served from GitHub Pages instead — controlled by `SOCIAL_IMAGE_BASE` in the workflow. It falls back to `SITE_URL` when unset, so deleting that one line switches social images to the canonical domain at cutover.
+
+### Enabling the edge deploy
+
+1. In Cloudflare, create an API token with **Account → Workers Scripts → Edit**.
+2. Save it as a repository secret named `CLOUDFLARE_API_TOKEN` (Settings → Secrets and variables → Actions).
+
+Until then the `edge` job still builds and packages the site, then reports a notice and skips the upload — CI stays green.
+
+Manual equivalent, from the repository root:
+
+```sh
+SITE_URL=https://beneaththealter.eu.org \
+SOCIAL_IMAGE_BASE=https://ztype999.github.io/beneath-the-alter \
+bun build/build-site.ts .
+
+mkdir -p edge/dist
+cp -- *.html *.css *.js robots.txt sitemap.xml edge/dist/
+cp -r assets admin edge/dist/
+npx wrangler deploy --config edge/wrangler.jsonc
+```
+
+Analytics is intentionally restricted to the GitHub Pages origin: `SITE_ORIGIN` in `analytics-worker/wrangler.toml` allows `https://ztype999.github.io` only, so page views on the edge mirror are not counted.
 
 ## Important
 

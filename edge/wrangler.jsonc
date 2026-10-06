@@ -1,0 +1,17 @@
+{
+  // Cloudflare Worker that mirrors the published site on the edge.
+  // Deployed by the "edge" job in .github/workflows/deploy.yml, or manually:
+  //   bun build/build-site.ts .
+  //   copy *.html *.css *.js robots.txt sitemap.xml assets/ admin/ -> edge/dist/
+  //   npx wrangler deploy --config edge/wrangler.jsonc
+  //
+  // Requires the CLOUDFLARE_API_TOKEN repository secret; until that exists the
+  // CI job skips this deploy and GitHub Pages remains the only publish target.
+  "name": "www",
+  "compatibility_date": "2026-10-06",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}
