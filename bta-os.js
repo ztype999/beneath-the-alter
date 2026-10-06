@@ -45,7 +45,9 @@ function boot(){
 function enhance(){
  document.body.classList.add("bta-os");
  const hud=document.createElement("div");hud.className="bta-hud";hud.innerHTML='<i class="bta-hud__corner tl"></i><i class="bta-hud__corner tr"></i><i class="bta-hud__corner bl"></i><i class="bta-hud__corner br"></i>';document.body.append(hud);
- const scan=document.createElement("div");scan.className="bta-scan";document.body.append(scan);
+ // Reduced motion gets no sweep line at all: the CSS keyframes are disabled
+ // there, which would otherwise strand a fixed 1px line at an arbitrary spot.
+ if(!reduce){const scan=document.createElement("div");scan.className="bta-scan";document.body.append(scan)}
  // Spec 13 puts this readout in the desktop top bar, not floating over the page:
  // inside .system-strip it can never sit on top of footer content or a control.
  const sys=document.createElement("div");sys.className="bta-system";sys.innerHTML='<span><span class="live" aria-hidden="true"></span><strong>BTA-OS // ONLINE</strong></span><span>NODE: NYC-001</span><span>SIGNAL: <strong>98%</strong></span><span>YEAR: 3000 // <span class="bta-clock"></span></span>';sys.setAttribute("aria-hidden","true");
@@ -64,7 +66,9 @@ function enhance(){
  const editable=e=>{const t=e.target;return t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable)};
  let keys="";document.addEventListener("keydown",e=>{if(e.key==="Escape"){close();return}if(e.metaKey||e.ctrlKey||e.altKey||editable(e))return;if(e.key&&e.key.length===1){keys=(keys+e.key.toUpperCase()).slice(-12);if(keys.endsWith("ALTER")||keys.endsWith("BTA3000"))open(e.target)}});
  document.querySelectorAll(".site-header nav a").forEach((a,i)=>{const tag=document.createElement("span");tag.className="bta-nav-tag";tag.setAttribute("aria-hidden","true");tag.textContent="MODULE_"+String(i+1).padStart(2,"0")+" // ONLINE";a.append(tag)});
- if(!matchMedia("(hover:none)").matches){const cursor=document.createElement("div");cursor.className="bta-target";document.body.append(cursor);document.addEventListener("pointermove",e=>{cursor.style.left=e.clientX+"px";cursor.style.top=e.clientY+"px"},{passive:true});document.querySelectorAll("a,button").forEach(el=>{el.addEventListener("mouseenter",()=>cursor.classList.add("active"));el.addEventListener("mouseleave",()=>cursor.classList.remove("active"))})}
+ // Fine pointers only, and never under reduced motion: the JS decides this
+ // rather than leaving it to CSS, so no listener is attached needlessly.
+ if(!reduce&&!matchMedia("(hover:none)").matches){const cursor=document.createElement("div");cursor.className="bta-target";document.body.append(cursor);document.addEventListener("pointermove",e=>{cursor.style.left=e.clientX+"px";cursor.style.top=e.clientY+"px"},{passive:true});document.querySelectorAll("a,button").forEach(el=>{el.addEventListener("mouseenter",()=>cursor.classList.add("active"));el.addEventListener("mouseleave",()=>cursor.classList.remove("active"))})}
  // Reveal-on-scroll. A threshold of 0.12 would strand any element taller than
  // roughly eight viewports (the homepage feed on a phone) at opacity:0 forever,
  // because that much of it can never be on screen at once. A 0 threshold plus a
