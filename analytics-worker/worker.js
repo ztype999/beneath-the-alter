@@ -241,60 +241,91 @@ async function purgeExpired(env) {
   const result = await env.DB.prepare("DELETE FROM events WHERE created_at < ?")
     .bind(cutoff)
     .run();
-  return { cutoff, removed: Number(result.meta?.changes || 0) };
+
+  // Rate-limit counters hold one row per address ever seen, so ingest in
+  // particular would accumulate without bound. Rows past RATE_PURGE_AFTER_MS
+  // cannot affect any decision the Worker makes.
+  const stale = Date.now() - RATE_PURGE_AFTER_MS;
+  const auth = await env.DB.prepare("DELETE FROM auth_attempts WHERE window_start < ?").bind(stale).run();
+  const ingest = await env.DB.prepare("DELETE FROM ingest_attempts WHERE window_start < ?").bind(stale).run();
+
+  return {
+    cutoff,
+    removed: Number(result.meta?.changes || 0),
+    stale_counters: Number(auth.meta?.changes || 0) + Number(ingest.meta?.changes || 0),
+  };
 }
 
 /*
- * In-memory per-IP counter. The Origin header is trivially spoofed, so this is
- * the only thing standing between the Worker and an event flood. It lives in
- * isolate memory, so it is a soft guard: bounded, cheap, and never blocks a
- * normal visitor (one person generates ~2 events a minute).
+ * Durable per-address counters for both limiters in this file.
+ *
+ * The originals kept a Map in isolate memory, which never fires: a burst from
+ * one address is spread across several isolates, each with its own Map, so no
+ * single one ever accumulates enough strikes. Demonstrated against both — 70
+ * rapid ingest posts produced zero 429s. D1 is one shared store, so the count
+ * survives that scatter.
+ *
+ * Keys are hashed rather than stored. The header of this file promises never to
+ * keep a full IP address, and this state is durable now rather than transient:
+ * HMAC over SESSION_SECRET, falling back to SHA-256 if that is ever unset.
  */
-const ingestBuckets = new Map();
+const RATE_WINDOW_MS = 60000;
+// Any counter row older than this is already inert — rateExceeded() treats an
+// expired window as unused — so sweeping it changes no behaviour. Without that
+// sweep both tables would grow one row per address forever.
+const RATE_PURGE_AFTER_MS = 60 * RATE_WINDOW_MS;
+const RATE_TABLES = new Set(["auth_attempts", "ingest_attempts"]);
 
-function ingestOverLimit(ip, now = Date.now()) {
-  if (!ip) return false;
-  if (ingestBuckets.size > 10000) ingestBuckets.clear();
-  let bucket = ingestBuckets.get(ip);
-  if (!bucket || now > bucket.resetAt) {
-    bucket = { count: 0, resetAt: now + 60000 };
-    ingestBuckets.set(ip, bucket);
+async function rateLimitKey(env, ip) {
+  if (!ip) return null;
+  if (env.SESSION_SECRET) {
+    return (await hmac(env.SESSION_SECRET, "rate:" + ip)).slice(0, 32);
   }
-  bucket.count += 1;
-  return bucket.count > INGEST_LIMIT_PER_MINUTE;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rate:" + ip));
+  return [...new Uint8Array(digest)].slice(0, 16).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function rateState(env, table, key) {
+  if (!key || !RATE_TABLES.has(table)) return null;
+  return env.DB.prepare(
+    `SELECT count, window_start FROM ${table} WHERE client_key = ?`
+  ).bind(key).first();
+}
+
+function rateExceeded(state, limit) {
+  return !!state && Date.now() - state.window_start <= RATE_WINDOW_MS && state.count >= limit;
+}
+
+/*
+ * Counted on the way in, before parsing, so a flood of malformed payloads is
+ * throttled as well. The check reads first and only accepted requests write: a
+ * blocked request costs one indexed read and nothing else, so it cannot exhaust
+ * the D1 write quota this exists to protect — which is exactly what the
+ * in-memory version allowed.
+ */
+async function recordUse(env, table, key) {
+  if (!key || !RATE_TABLES.has(table)) return;
+  const now = Date.now();
+  await env.DB.prepare(`
+    INSERT INTO ${table} (client_key, window_start, count) VALUES (?1, ?2, 1)
+    ON CONFLICT(client_key) DO UPDATE SET
+      window_start = CASE WHEN (?2 - ${table}.window_start) > ${RATE_WINDOW_MS} THEN ?2 ELSE ${table}.window_start END,
+      count = CASE WHEN (?2 - ${table}.window_start) > ${RATE_WINDOW_MS} THEN 1 ELSE ${table}.count + 1 END
+  `).bind(key, now).run();
 }
 
 /*
  * DASHBOARD_TOKEN is a short memorable password rather than a 160-bit random
  * token, so unlike ingest it is genuinely guessable and must be throttled.
+ * It shares rateLimitKey/rateState/recordUse with the ingest limiter above.
  *
- * The counter lives in D1, not isolate memory. A burst from one address is
- * spread across several isolates, each with its own Map, so the in-memory
- * version never accumulated enough strikes to fire — demonstrated against both
- * this limiter and the ingest one, which still has that flaw. D1 is a single
- * shared store, so the count survives the scatter.
- *
- * Failures are deduplicated against the previously presented value because the
- * dashboard fires nine parallel calls per load; counting those separately would
- * lock the real owner out after a single typo. At 8 distinct values a minute, a
- * full 10^9 sweep from one address takes about 238 years.
+ * Strikes are deduplicated against the previously presented value because the
+ * dashboard fires nine parallel API calls per load; counting those separately
+ * would lock the real owner out after a single typo. At 8 distinct values a
+ * minute, a full 10^9 sweep from one address takes about 238 years.
  */
-const AUTH_WINDOW_MS = 60000;
-
-async function authState(env, ip) {
-  if (!ip) return null;
-  return env.DB.prepare(
-    "SELECT fails, window_start FROM auth_attempts WHERE ip = ?"
-  ).bind(ip).first();
-}
-
-function authIsLocked(state) {
-  return !!state && Date.now() - state.window_start <= AUTH_WINDOW_MS
-    && state.fails >= AUTH_LIMIT_PER_MINUTE;
-}
-
-async function recordAuthFailure(env, ip, presented) {
-  if (!ip) return;
+async function recordAuthFailure(env, key, presented) {
+  if (!key) return;
   const now = Date.now();
   const value = String(presented || "").slice(0, 64);
   // One atomic UPSERT: the window may have rolled over, the value may repeat,
@@ -302,21 +333,22 @@ async function recordAuthFailure(env, ip, presented) {
   // pre-update row, so an expired window resets to a single strike rather than
   // carrying the old total forward.
   await env.DB.prepare(`
-    INSERT INTO auth_attempts (ip, window_start, fails, last_value)
+    INSERT INTO auth_attempts (client_key, window_start, count, last_value)
     VALUES (?1, ?2, 1, ?3)
-    ON CONFLICT(ip) DO UPDATE SET
-      window_start = CASE WHEN (?2 - auth_attempts.window_start) > ${AUTH_WINDOW_MS} THEN ?2 ELSE auth_attempts.window_start END,
-      fails = CASE
-        WHEN (?2 - auth_attempts.window_start) > ${AUTH_WINDOW_MS} THEN 1
-        WHEN auth_attempts.last_value = ?3 THEN auth_attempts.fails
-        ELSE auth_attempts.fails + 1
+    ON CONFLICT(client_key) DO UPDATE SET
+      window_start = CASE WHEN (?2 - auth_attempts.window_start) > ${RATE_WINDOW_MS} THEN ?2 ELSE auth_attempts.window_start END,
+      count = CASE
+        WHEN (?2 - auth_attempts.window_start) > ${RATE_WINDOW_MS} THEN 1
+        WHEN auth_attempts.last_value = ?3 THEN auth_attempts.count
+        ELSE auth_attempts.count + 1
       END,
       last_value = ?3
-  `).bind(ip, now, value).run();
+  `).bind(key, now, value).run();
 }
 
-async function clearAuthFailures(env, ip) {
-  await env.DB.prepare("DELETE FROM auth_attempts WHERE ip = ?").bind(ip).run();
+async function clearAuthFailures(env, key) {
+  if (!key) return;
+  await env.DB.prepare("DELETE FROM auth_attempts WHERE client_key = ?").bind(key).run();
 }
 
 export default {
@@ -386,8 +418,12 @@ export default {
       if (url.pathname === "/api/ingest" && request.method === "POST") {
         if (origin && origin !== env.SITE_ORIGIN) return json({ error: "origin" }, 403, cors(env, origin));
 
-        const ip = request.headers.get("CF-Connecting-IP") || "";
-        if (ingestOverLimit(ip)) return json({ error: "rate limited" }, 429, cors(env, origin));
+        // Durable counter — the in-memory one never fired across isolates.
+        const rateKey = await rateLimitKey(env, request.headers.get("CF-Connecting-IP") || "");
+        if (rateExceeded(await rateState(env, "ingest_attempts", rateKey), INGEST_LIMIT_PER_MINUTE)) {
+          return json({ error: "rate limited" }, 429, cors(env, origin));
+        }
+        await recordUse(env, "ingest_attempts", rateKey);
 
         const declared = Number(request.headers.get("Content-Length") || 0);
         if (declared > MAX_BODY_BYTES) return json({ error: "payload too large" }, 413, cors(env, origin));
@@ -433,27 +469,27 @@ export default {
         return json({ ok: true }, 202, cors(env, origin));
       }
 
-      const clientIp = request.headers.get("CF-Connecting-IP") || "";
+      const rateKey = await rateLimitKey(env, request.headers.get("CF-Connecting-IP") || "");
       const bearer = (request.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/i);
 
       // Read the durable counter before comparing anything: a lockout that only
       // changed the response code would still let a sweep test every guess.
       let priorFailures = null;
       if (bearer) {
-        priorFailures = await authState(env, clientIp);
-        if (authIsLocked(priorFailures)) {
+        priorFailures = await rateState(env, "auth_attempts", rateKey);
+        if (rateExceeded(priorFailures, AUTH_LIMIT_PER_MINUTE)) {
           return json({ error: "too many attempts" }, 429, cors(env, origin));
         }
       }
 
       const session = await authenticated(request, env);
       if (!session) {
-        if (bearer) await recordAuthFailure(env, clientIp, bearer[1].trim());
+        if (bearer) await recordAuthFailure(env, rateKey, bearer[1].trim());
         return json({ error: "unauthorized" }, 401, cors(env, origin));
       }
-      // Cleared only when this IP had recorded failures, so an ordinary
+      // Cleared only when this address had recorded failures, so an ordinary
       // dashboard load costs one read and no writes.
-      if (priorFailures) await clearAuthFailures(env, clientIp);
+      if (priorFailures) await clearAuthFailures(env, rateKey);
 
       if (url.pathname === "/api/me") {
         return json({ login: session.login }, 200, cors(env, origin));

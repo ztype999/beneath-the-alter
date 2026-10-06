@@ -141,17 +141,20 @@ independently by `SITE_ORIGIN`.
 ### Failed-attempt lockout
 
 Wrong passwords are counted in the `auth_attempts` D1 table (defined in
-`schema.sql`), keyed by client IP, and expire after `AUTH_WINDOW_MS` (60 s).
-Once one address presents `AUTH_LIMIT_PER_MINUTE` **distinct** wrong values
-inside that window, the Worker answers HTTP 429 for every attempt — including a
-correct password — until the window lapses. A successful login clears the row.
+`schema.sql`) and expire after `RATE_WINDOW_MS` (60 s). The key is an HMAC of
+the client address — `rateLimitKey()` in `worker.js` — never the address
+itself, because no full IP address is stored anywhere in this system. Once one
+address presents `AUTH_LIMIT_PER_MINUTE` **distinct** wrong values inside that
+window, the Worker answers HTTP 429 for every attempt — including a correct
+password — until the window lapses. A successful login clears the row.
 
 Two details matter if you ever change this:
 
-- The counter lives in D1, not isolate memory. A burst of requests from one
+- Both counters live in D1, not isolate memory. A burst of requests from one
   address is spread across several Worker isolates, each with its own `Map`, so
-  an in-memory counter never accumulates enough strikes to fire. This was
-  demonstrated against both the auth and the ingest limiter.
+  an in-memory counter never accumulates enough strikes to fire. That was
+  demonstrated empirically against both limiters before they were moved: 70
+  rapid ingest posts produced zero 429s.
 - Strikes are deduplicated against the previously presented value, because the
   dashboard fires nine parallel API calls per load. Counting those separately
   would lock the owner out after a single typo.
@@ -195,10 +198,14 @@ Currently set on the Worker (`npx wrangler secret list`):
 - Session cookies: the dashboard is on GitHub Pages while the API is on
   `*.workers.dev`, so the session cookie is `SameSite=None; Secure; HttpOnly`.
   CORS is locked to `SITE_ORIGIN` and OAuth state is validated on callback.
-- Rate limiting: `/api/ingest` returns `429` after `INGEST_LIMIT_PER_MINUTE`
-  (60) events from one IP in a minute, on top of the origin check and the
-  `MAX_BODY_BYTES` payload cap. The counter is per-isolate memory, so it is a
-  soft guard against casual floods, not a billing-grade limiter.
+- Rate limiting: `/api/ingest` returns `429` once `INGEST_LIMIT_PER_MINUTE`
+  (60) requests from one address arrive inside `RATE_WINDOW_MS`, on top of the
+  origin check and the `MAX_BODY_BYTES` payload cap. The counter lives in D1 and
+  is checked *before* the body is parsed, so a flood of malformed payloads is
+  throttled too — and a blocked request costs one indexed read and no writes, so
+  it cannot exhaust the write quota it exists to protect. Both counter tables
+  are swept by the daily cron once a row passes `RATE_PURGE_AFTER_MS` (1 h), so
+  they never grow one row per address.
 - Schema: `idx_events_site_created` covers the dashboard's main
   `site_id + created_at` filter. Re-apply `schema.sql` if you recreate D1.
 - Local dev: `npx wrangler dev` inside `analytics-worker` serves the API at
