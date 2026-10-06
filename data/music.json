@@ -2,49 +2,75 @@
   "releases": [
     {
       "title": "Armageddon",
+      "slug": "armageddon",
       "url": "https://open.spotify.com/album/7nTfy6O2loOZ2rcrd77cFr",
+      "spotifyTrack": "https://open.spotify.com/track/5mCURGhH8MfhaslERRoCtu",
+      "appleSong": "https://music.apple.com/us/album/armageddon/6794193106?i=6794193109",
       "image": "./assets/release-0.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02377ebee7acd1bb621d320323"
     },
     {
       "title": "Anguish",
+      "slug": "anguish",
       "url": "https://open.spotify.com/album/1JoUWtp8bMrn0YovlCBWG7",
+      "spotifyTrack": "https://open.spotify.com/track/3HRNGfQMSrTbPot3ORmpNk",
+      "appleSong": "https://music.apple.com/us/album/anguish/6808125416?i=6808125420",
       "image": "./assets/release-1.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e023c898da1d8bb6583a38ba530"
     },
     {
       "title": "Falling apart",
+      "slug": "falling-apart",
       "url": "https://open.spotify.com/album/1NsvVCZrO51yVja9NA7BfX",
+      "spotifyTrack": "https://open.spotify.com/track/5YTosOMm8vD2KFdoffGRMf",
+      "appleSong": "https://music.apple.com/us/album/falling-apart/6776779948?i=6776779953",
       "image": "./assets/release-2.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02429eba3180eeab92638feb7b"
     },
     {
       "title": "Corazón sin cara",
+      "slug": "corazon-sin-cara",
       "url": "https://open.spotify.com/album/6J3ABbimVmIYBM0sqTTeyX",
+      "spotifyTrack": "https://open.spotify.com/track/1tNqr0UCk1bbbdUN883cdz",
+      "appleSong": "https://music.apple.com/us/album/coraz%C3%B3n-sin-cara/6776789278?i=6776789279",
+      "youtube": "https://www.youtube.com/watch?v=5r1RXYe83xw",
+      "youtubeTitle": "corazon sin cara remix",
       "image": "./assets/release-3.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02a7c86e7e939a6c8a83b5445e"
     },
     {
       "title": "GRAVEYARD",
+      "slug": "graveyard",
       "url": "https://open.spotify.com/album/3xlEpDO3ju6YDDtGiOKwRB",
+      "spotifyTrack": "https://open.spotify.com/track/2lPL6h5MYqG3ehMEgnshPU",
+      "appleSong": "https://music.apple.com/us/album/graveyard/6771558656?i=6771558660",
       "image": "./assets/release-4.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02db3339684055287bd92e6e39"
     },
     {
       "title": "DTMF",
+      "slug": "dtmf",
       "url": "https://open.spotify.com/album/6TGfyHUt6UPDjj7QlYvBC9",
+      "spotifyTrack": "https://open.spotify.com/track/68Hm91Blh1SOxIvoU39IBf",
+      "appleSong": "https://music.apple.com/us/album/dtmf/6778127957?i=6778127960",
       "image": "./assets/release-5.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02eca3e299e1dbbb7c1fb2acd7"
     },
     {
       "title": "NOT MYSELF",
+      "slug": "not-myself",
       "url": "https://open.spotify.com/album/0aDSBA5HYTyakuZ2pPgEqM",
+      "spotifyTrack": "https://open.spotify.com/track/4eGFZI2mKiAL56DoQeBPhX",
+      "appleSong": "https://music.apple.com/us/album/not-myself/6772280918?i=6772280922",
       "image": "./assets/release-6.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e024a99b05dd74d216d6deeb8ce"
     },
     {
       "title": "redemption",
+      "slug": "redemption",
       "url": "https://open.spotify.com/album/6vdQtMP6s1vQHwgoa6pnwQ",
+      "spotifyTrack": "https://open.spotify.com/track/0FrWesVb9VZlbMfXIhGnBy",
+      "appleSong": "https://music.apple.com/us/album/redemption/6791371833?i=6791371837",
       "image": "./assets/release-7.webp",
       "sourceImage": "https://i.scdn.co/image/ab67616d00001e02d40025239921604113feecf5"
     }
@@ -52,26 +78,31 @@
   "tracks": [
     {
       "title": "DTMF",
+      "slug": "dtmf",
       "url": "https://open.spotify.com/track/68Hm91Blh1SOxIvoU39IBf",
       "image": "./assets/release-5.webp"
     },
     {
       "title": "NOT MYSELF",
-      "url": "https://open.spotify.com/album/0aDSBA5HYTyakuZ2pPgEqM",
+      "slug": "not-myself",
+      "url": "https://open.spotify.com/track/4eGFZI2mKiAL56DoQeBPhX",
       "image": "./assets/release-6.webp"
     },
     {
       "title": "CORAZON SIN CARA",
+      "slug": "corazon-sin-cara",
       "url": "https://open.spotify.com/track/1tNqr0UCk1bbbdUN883cdz",
       "image": "./assets/release-3.webp"
     },
     {
       "title": "REDEMPTION",
-      "url": "https://open.spotify.com/album/6vdQtMP6s1vQHwgoa6pnwQ",
+      "slug": "redemption",
+      "url": "https://open.spotify.com/track/0FrWesVb9VZlbMfXIhGnBy",
       "image": "./assets/release-7.webp"
     },
     {
       "title": "FALLING APART",
+      "slug": "falling-apart",
       "url": "https://open.spotify.com/track/5YTosOMm8vD2KFdoffGRMf",
       "image": "./assets/release-2.webp"
     }
