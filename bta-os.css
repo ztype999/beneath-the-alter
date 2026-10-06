@@ -1,0 +1,63 @@
+/* BTA-OS 3000 — isolated cybernetic interface layer */
+:root{--bta-green:#39ff88;--bta-cyan:#00e5ff;--bta-red:#ff315a}
+body.bta-os{background:#020403}
+.bta-boot{position:fixed;inset:0;z-index:99999;background:#010201;color:#8dffb9;font:12px/1.55 var(--mono,monospace);display:flex;align-items:center;justify-content:center;overflow:hidden;isolation:isolate}
+.bta-boot:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(57,255,136,.035) 0 1px,transparent 1px 4px);pointer-events:none}
+.bta-boot__frame{position:relative;width:min(900px,90vw);padding:28px;border:1px solid rgba(57,255,136,.25);box-shadow:0 0 80px rgba(57,255,136,.06),inset 0 0 50px rgba(57,255,136,.025);background:rgba(0,4,2,.8)}
+.bta-boot__head{display:flex;justify-content:space-between;gap:20px;border-bottom:1px solid rgba(57,255,136,.2);padding-bottom:12px;margin-bottom:18px;font-size:10px;letter-spacing:.18em}
+.bta-boot__screen{min-height:300px;max-height:55vh;overflow:hidden;white-space:pre-wrap;text-shadow:0 0 10px rgba(57,255,136,.35)}
+.bta-boot__line{opacity:0;animation:btaLineIn .08s ease forwards}
+.bta-boot__line.ok{color:#c8ffdb}.bta-boot__line.warn{color:var(--bta-red)}.bta-boot__line.accent{color:var(--bta-cyan)}
+.bta-boot__progress{height:5px;border:1px solid rgba(57,255,136,.3);margin-top:20px}
+.bta-boot__bar{height:100%;width:0;background:linear-gradient(90deg,var(--bta-green),var(--bta-cyan));box-shadow:0 0 18px rgba(57,255,136,.5);transition:width .12s linear}
+.bta-boot__status{display:flex;justify-content:space-between;margin-top:8px;color:#527b62;font-size:9px;letter-spacing:.12em}
+/* In normal flow and right-aligned, so the percentage never sits under it. */
+.bta-boot__skip{display:block;width:fit-content;margin:14px 0 0 auto;border:1px solid rgba(57,255,136,.3);padding:7px 10px;color:#8dffb9;background:transparent;font:10px var(--mono,monospace);cursor:pointer}
+.bta-boot__skip:hover,.bta-boot__skip:focus-visible{border-color:var(--bta-green);color:#d8ffe5;outline:none}
+.bta-boot__skip:focus-visible{box-shadow:0 0 0 2px rgba(57,255,136,.35)}
+.bta-boot__logo{position:absolute;inset:0;display:grid;place-content:center;text-align:center;opacity:0;pointer-events:none}
+.bta-boot__logo strong{font-family:var(--gothic,serif);font-size:clamp(52px,11vw,150px);line-height:.72;color:#eafff0;text-shadow:0 0 20px rgba(57,255,136,.28);letter-spacing:-.05em}
+.bta-boot__logo small{font:10px var(--mono,monospace);letter-spacing:.35em;margin-top:28px;color:var(--bta-green)}
+.bta-boot.logo-phase .bta-boot__frame{opacity:0;transition:opacity .3s}.bta-boot.logo-phase .bta-boot__logo{opacity:1;animation:btaLogo .9s steps(5,end)}
+/* Keep the frame hidden once the logo takes over: dropping logo-phase while
+   is-done starts would flash the BIOS frame back for a frame during the fade. */
+.bta-boot.is-done .bta-boot__frame{opacity:0}
+.bta-boot.is-done{animation:btaBootOut var(--bta-fade,.55s) ease forwards;pointer-events:none}
+.bta-hud{position:fixed;inset:0;z-index:40;pointer-events:none;border:1px solid rgba(57,255,136,.08)}
+.bta-hud__corner{position:fixed;width:28px;height:28px;border-color:rgba(57,255,136,.38);border-style:solid}
+.bta-hud__corner.tl{top:12px;left:12px;border-width:1px 0 0 1px}.bta-hud__corner.tr{top:12px;right:12px;border-width:1px 1px 0 0}.bta-hud__corner.bl{bottom:12px;left:12px;border-width:0 0 1px 1px}.bta-hud__corner.br{bottom:12px;right:12px;border-width:0 1px 1px 0}
+/* Lives inside .system-strip (spec 13: desktop top bar) rather than floating over
+   the page, so it can never cover the footer or a control. */
+.bta-system{display:flex;align-items:center;gap:14px;font:9px/1.5 var(--mono,monospace);letter-spacing:.1em;color:#6d9d7c;white-space:nowrap}
+.bta-system strong{color:var(--bta-green);font-weight:400}.bta-system .live{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--bta-green);box-shadow:0 0 9px var(--bta-green);margin-right:6px;vertical-align:middle}
+/* Breakpoints follow the strip's actual budget: the flanking status text eats
+   ~480px, so the gap is viewport-480. The two secondary labels drop first,
+   and the whole readout leaves once the gap can no longer hold the clock. */
+@media(max-width:1099px){.bta-system>span:nth-child(2),.bta-system>span:nth-child(3){display:none}}
+@media(max-width:759px){.bta-system{display:none}}
+.bta-scan{position:fixed;z-index:39;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(57,255,136,.25),transparent);box-shadow:0 0 12px rgba(57,255,136,.18);pointer-events:none;animation:btaScan 9s linear infinite}
+.bta-terminal{position:fixed;inset:7vh 7vw;z-index:9000;background:rgba(0,5,3,.96);border:1px solid rgba(57,255,136,.42);box-shadow:0 0 80px rgba(0,0,0,.8),0 0 30px rgba(57,255,136,.08);display:none;flex-direction:column;color:#a9ffc4;font:12px/1.65 var(--mono,monospace)}
+.bta-terminal.open{display:flex}.bta-terminal__bar{height:38px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(57,255,136,.2);color:var(--bta-green)}
+.bta-terminal__close{border:1px solid rgba(57,255,136,.25);color:#8dffb9;background:none;padding:4px 9px;cursor:pointer;font:10px var(--mono,monospace)}
+.bta-terminal__body{padding:20px;overflow:auto;flex:1}.bta-terminal__input{border:0;border-top:1px solid rgba(57,255,136,.18);background:transparent;color:#d8ffe5;padding:14px 20px;outline:0;font:12px var(--mono,monospace)}
+.bta-decode{opacity:0;transform:translateY(18px);filter:blur(4px);transition:opacity .7s ease,transform .7s ease,filter .7s ease}
+.bta-decode.bta-visible{opacity:1;transform:none;filter:none}
+.bta-target{position:fixed;z-index:8999;pointer-events:none;width:18px;height:18px;border:1px solid rgba(57,255,136,.7);border-radius:50%;transform:translate(-50%,-50%);opacity:0;transition:opacity .15s}
+.bta-target.active{opacity:1}
+.bta-nav-tag{position:absolute;top:100%;left:0;font:7px var(--mono,monospace);color:var(--bta-green);white-space:nowrap;opacity:0;transform:translateY(-3px);transition:.2s;pointer-events:none}
+.site-header nav a{position:relative}
+.site-header nav a:hover .bta-nav-tag,.site-header nav a:focus-visible .bta-nav-tag{opacity:1;transform:none}
+/* The final nav item sits against the right edge; its tag must grow inwards
+   instead of pushing the document 1px wider than the viewport. */
+.site-header nav a:last-child .bta-nav-tag{left:auto;right:0}
+.bta-terminal__body .bta-echo-ok{color:var(--bta-green)}
+.bta-terminal__body .bta-echo-cyan{color:var(--bta-cyan)}
+@media(max-width:767px){.bta-hud__corner{width:18px;height:18px}.bta-boot__frame{padding:18px;width:94vw}.bta-boot__screen{min-height:250px;font-size:10px}.bta-terminal{inset:3vh 3vw}.bta-target{display:none}}
+/* The site-wide FX toggle (html[data-motion=off]) must silence this layer too,
+   not just prefers-reduced-motion. */
+html[data-motion=off] .bta-target{display:none}
+html[data-motion=off] .bta-scan{display:none}
+html[data-motion=off] .bta-decode{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}
+html[data-motion=off] .bta-nav-tag{transition:none}
+@media(prefers-reduced-motion:reduce){.bta-boot *,.bta-scan{animation:none!important;transition:none!important}.bta-decode{opacity:1;transform:none;filter:none}.bta-target{display:none}.bta-boot__line{opacity:1}.bta-boot.is-done{opacity:0}}
+@keyframes btaBootOut{to{opacity:0;visibility:hidden;transform:scale(1.015)}}@keyframes btaLineIn{to{opacity:1}}@keyframes btaLogo{0%{filter:blur(14px);opacity:0;transform:scale(1.06)}50%{filter:none;opacity:1;transform:scale(1)}100%{text-shadow:0 0 20px rgba(57,255,136,.28)}}@keyframes btaScan{from{top:8%}to{top:94%}}

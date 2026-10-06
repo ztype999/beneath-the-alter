@@ -62,6 +62,50 @@ the edge mirror, and `https://beneaththealter.eu.org`) — see `readableOrigins(
 in `worker.js`. Every other origin receives `Access-Control-Allow-Origin: null`
 and the browser discards the response.
 
+## BTA-OS 3000 layer
+
+`bta-os.css` and `bta-os.js` are an additive cybernetic interface layer over the
+existing pages. Both are linked from the shared `<head>` in
+`build/site/layout.ts`, so every generated page — home, music, band, members,
+shows, merch, gallery, videos, socials, contact, privacy, the eight
+`listen-*.html` link-tree pages and `404.html` — picks them up automatically.
+CI already packages `*.css` and `*.js`, so no workflow change was needed.
+
+The layer only touches `document.body`; it never rewrites the existing markup.
+`site.css`, `site.js`, `terminal-bg.js`, analytics, the merch dialog, the
+contact form, the Spotify player and all content JSON keep working unchanged.
+
+### What it adds
+
+- A first-visit BIOS boot sequence (≈3s) with an animated progress bar and a
+  **SKIP INITIALIZATION** button. Returning visits get a short boot (~750ms),
+  and `prefers-reduced-motion` gets an instant reveal.
+- A top-bar readout (`BTA-OS // ONLINE`, node, signal, live clock) inserted into
+  the existing `.system-strip`, plus HUD corner brackets and a scanline sweep.
+- A simulated terminal. Type `ALTER` or `BTA3000` anywhere outside a form field,
+  or click the system strip five times. `Escape` or **CLOSE** dismisses it.
+- Nav hover tags (`MODULE_01 // ONLINE`) and a cursor reticle on fine-pointer
+  devices.
+- A scroll-reveal pass over `main` sections.
+
+### Behaviour and safeguards
+
+| Concern | Behaviour |
+| --- | --- |
+| Boot never blocks the site | A 15s failsafe removes the overlay no matter what; if the script fails to load, no overlay is ever created |
+| `localStorage` unavailable | Flag reads and writes are wrapped, so the overlay still clears |
+| Reduced motion / FX toggle | `prefers-reduced-motion` **and** the site-wide `html[data-motion=off]` switch both silence the scan, cursor, reveal and animations |
+| Terminal input | Echoed with `textContent`, never parsed as markup; no `eval`, no `document.write`, no `insertAdjacentHTML` |
+| Form fields | Typing in an input, textarea or select never triggers the easter eggs |
+| Scroll reveal | Uses a `0` threshold with a bottom inset, so tall sections are never stranded at `opacity:0` |
+| Accessibility | Readout and nav tags are `aria-hidden`; Lighthouse scores match the pre-layer baseline exactly (A11y 0.96, Best Practices 1.0, SEO 1.0) |
+
+### Boot storage
+
+- `bta_boot_completed` — `"true"` once the sequence has run, which is what
+  shortens the next visit.
+- Removing that key restores the full first-visit boot.
+
 ## Important
 
 - Contact forms prepare an email draft; they do not send or store messages.
