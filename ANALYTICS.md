@@ -123,8 +123,11 @@ The access token is stored in the browser's `localStorage` under
 Merging to `main` triggers the build workflow, which regenerates every HTML page
 with the tracker and publishes `admin/` (including the dashboard).
 
-Open `https://beneaththealter.eu.org/admin/analytics.html` and sign
-in with GitHub as `ztype999`.
+Open `https://beneaththealter.eu.org/admin/analytics.html` and unlock it with
+your `DASHBOARD_TOKEN`, or choose **OR SIGN IN WITH GITHUB** to authenticate as
+`ztype999`. The dashboard renders nothing until one of those succeeds — the gate
+is visible from first paint and every `/api/*` call returns HTTP 401 without a
+valid credential.
 
 ## 5. Secrets
 
