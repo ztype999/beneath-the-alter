@@ -64,3 +64,362 @@ html[data-motion=off] .bta-decode{opacity:1!important;transform:none!important;f
 html[data-motion=off] .bta-nav-tag{transition:none}
 @media(prefers-reduced-motion:reduce){.bta-boot *,.bta-scan{animation:none!important;transition:none!important}.bta-scan{display:none}.bta-decode{opacity:1;transform:none;filter:none}.bta-target{display:none}.bta-boot__line{opacity:1}.bta-boot.is-done{opacity:0}}
 @keyframes btaBootOut{to{opacity:0;visibility:hidden;transform:scale(1.015)}}@keyframes btaLineIn{to{opacity:1}}@keyframes btaLogo{0%{filter:blur(14px);opacity:0;transform:scale(1.06)}50%{filter:none;opacity:1;transform:scale(1)}100%{text-shadow:0 0 20px rgba(57,255,136,.28)}}@keyframes btaScan{from{top:8%}to{top:94%}}
+
+/* =========================================
+   BTA-OS // TERMINAL → ELEMENT TRANSITIONS
+   ========================================= */
+
+/* overflow is deliberately NOT set here. Scanning line and glitch overlay only
+   exist during .bta-decoding, so the clip lives with them: holding it on the
+   resting state would permanently shave the 3.6px that .band-photo overhangs
+   its grid column. Measured zero layout difference either way, so this is a
+   paint-only decision. */
+.bta-terminal-reveal {
+  position: relative;
+  opacity: 0;
+  transform: translateY(12px) scale(.985);
+  filter: blur(6px);
+}
+
+/* Initial scanning line */
+.bta-terminal-reveal::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 2px;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #39ff88,
+    #00e5ff,
+    transparent
+  );
+  box-shadow:
+    0 0 10px #39ff88,
+    0 0 25px rgba(57,255,136,.5);
+}
+
+/* Glitch layers */
+.bta-terminal-reveal::after {
+  content: attr(data-terminal);
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  color: #39ff88;
+  background: rgba(0,5,3,.96);
+
+  font-family:
+    "Courier New",
+    monospace;
+
+  font-size: clamp(9px, 1vw, 13px);
+  letter-spacing: .08em;
+  line-height: 1.5;
+
+  white-space: pre-wrap;
+
+  opacity: 0;
+  pointer-events: none;
+
+  text-shadow:
+    0 0 5px #39ff88,
+    0 0 15px rgba(57,255,136,.5);
+}
+
+
+/* =========================================
+   ACTIVE STATE
+   ========================================= */
+
+.bta-terminal-reveal.bta-decoding {
+  overflow: hidden;
+  animation:
+    btaElementBoot .85s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.bta-terminal-reveal.bta-decoding::before {
+  opacity: 1;
+  animation:
+    btaScanElement .75s linear forwards;
+}
+
+.bta-terminal-reveal.bta-decoding::after {
+  opacity: 1;
+  animation:
+    btaTerminalOverlay .62s steps(8,end) forwards;
+}
+
+
+/* =========================================
+   GLITCH FLASH
+   ========================================= */
+
+.bta-terminal-reveal.bta-glitch {
+  animation:
+    btaGlitchFlash .12s steps(2,end) 3;
+}
+
+
+/* Hand-off: btaGlitchFlash carries no fill mode, so the moment it replaces
+   btaElementBoot the element would fall back to the base opacity:0 and vanish.
+   .bta-decoded pins the landed state independently of `animation`, which is why
+   it sets no animation of its own. */
+.bta-terminal-reveal.bta-decoded {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+
+/* =========================================
+   KEYFRAMES
+   ========================================= */
+
+@keyframes btaElementBoot {
+
+  0% {
+    opacity: 0;
+    transform:
+      translateY(15px)
+      scale(.97);
+
+    filter:
+      blur(8px)
+      brightness(2);
+  }
+
+  25% {
+    opacity: .3;
+
+    transform:
+      translateY(5px)
+      scale(1.01);
+
+    filter:
+      blur(4px)
+      brightness(1.8);
+  }
+
+  45% {
+    opacity: .7;
+
+    transform:
+      translateY(-2px)
+      scale(.995);
+
+    filter:
+      blur(2px)
+      brightness(1.5);
+  }
+
+  65% {
+    opacity: .9;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+    filter:
+      blur(1px)
+      brightness(1.2);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+    filter:
+      blur(0)
+      brightness(1);
+  }
+}
+
+
+@keyframes btaScanElement {
+
+  0% {
+    top: -5%;
+  }
+
+  100% {
+    top: 105%;
+  }
+}
+
+
+@keyframes btaTerminalOverlay {
+
+  0% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  15% {
+    clip-path: inset(15% 0 70% 0);
+    transform: translateX(-4px);
+  }
+
+  30% {
+    clip-path: inset(70% 0 10% 0);
+    transform: translateX(5px);
+  }
+
+  45% {
+    clip-path: inset(25% 0 45% 0);
+    transform: translateX(-2px);
+  }
+
+  60% {
+    clip-path: inset(80% 0 2% 0);
+    transform: translateX(3px);
+  }
+
+  75% {
+    clip-path: inset(40% 0 20% 0);
+    transform: translateX(-1px);
+  }
+
+  90% {
+    clip-path: inset(90% 0 0 0);
+    opacity: .5;
+  }
+
+  100% {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+
+@keyframes btaGlitchFlash {
+
+  0% {
+    transform:
+      translate(0)
+      skew(0);
+
+    filter:
+      brightness(1)
+      hue-rotate(0);
+  }
+
+  25% {
+    transform:
+      translate(-5px, 1px)
+      skew(-2deg);
+
+    filter:
+      brightness(2)
+      hue-rotate(30deg);
+  }
+
+  50% {
+    transform:
+      translate(4px, -1px)
+      skew(2deg);
+
+    filter:
+      brightness(.7)
+      hue-rotate(-30deg);
+  }
+
+  75% {
+    transform:
+      translate(-2px)
+      skew(-1deg);
+
+    filter:
+      brightness(1.8);
+  }
+
+  100% {
+    transform:
+      translate(0)
+      skew(0);
+
+    filter:
+      brightness(1)
+      hue-rotate(0);
+  }
+}
+
+
+/* =========================================
+   TERMINAL CURSOR
+   ========================================= */
+
+.bta-terminal-cursor {
+  display: inline-block;
+
+  width: 7px;
+  height: 13px;
+
+  margin-left: 4px;
+
+  vertical-align: middle;
+
+  background: #39ff88;
+
+  box-shadow:
+    0 0 8px #39ff88;
+
+  animation:
+    btaCursorBlink .65s steps(1) infinite;
+}
+
+@keyframes btaCursorBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+
+/* The class the script holds the finished section at, and the two switches that
+   must silence this block the same way prefers-reduced-motion does. */
+html[data-motion=off] .bta-terminal-reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  animation: none;
+  /* Nothing animates with FX off, so there is no scan line worth clipping. */
+  overflow: visible;
+}
+html[data-motion=off] .bta-terminal-reveal::before,
+html[data-motion=off] .bta-terminal-reveal::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .bta-terminal-reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    animation: none;
+  }
+
+  .bta-terminal-reveal.bta-glitch {
+    animation: none;
+  }
+
+  .bta-terminal-reveal::before,
+  .bta-terminal-reveal::after {
+    display: none;
+  }
+
+}

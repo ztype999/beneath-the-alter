@@ -89,7 +89,11 @@ function enhance(){
  // or echoed, is ever parsed as markup.
  const write=(text,cls)=>{const line=document.createElement("div");if(cls)line.className=cls;line.textContent=text;body.append(line);body.scrollTop=body.scrollHeight};
  let opener=null,greeted=false;
- const open=(from)=>{if(term.classList.contains("open"))return;opener=from||document.activeElement;term.classList.add("open");input.focus();if(!greeted){greeted=true;write("> connection established");write("> band database online");write("> audio core online");write("> archive synchronized")}};
+ // The greeting streams line by line like a boot log. The two blank lines are a
+ // non-breaking space rather than an empty string: an empty div collapses to zero
+ // height and would eat the gap between the blocks.
+ const greeting=["> CONNECTING TO AUDIO_CORE","> ESTABLISHING SECURE CONNECTION","> LOADING VISUAL MODULE","> DECRYPTING INTERFACE","> RENDER ENGINE ONLINE","> SIGNAL LOCKED","\u00a0","X7@A9#F2<>1K9...","QW7!2KALP0$9...","93JDKA7@!L2...","\u00a0","> MODULE READY"];
+ const open=(from)=>{if(term.classList.contains("open"))return;opener=from||document.activeElement;term.classList.add("open");input.focus();if(!greeted){greeted=true;greeting.forEach((line,i)=>{if(reduce)write(line);else setTimeout(()=>write(line),i*90)})}};
  const close=()=>{if(!term.classList.contains("open"))return;term.classList.remove("open");if(opener&&typeof opener.focus==="function")opener.focus({preventScroll:true});opener=null};
  term.querySelector(".bta-terminal__close").onclick=close;
  input.onkeydown=e=>{if(e.key==="Escape"){close();return}if(e.key!=="Enter")return;const v=input.value.trim().toUpperCase();input.value="";if(!v)return;write("> "+v);if(v==="ALTER"){write("> ROOT NODE RECOGNIZED","bta-echo-ok");write("> ACCESS: BENEATH THE ALTER","bta-echo-ok")}if(v==="BTA3000")write("> YOU HAVE REACHED THE DEEPEST NODE.","bta-echo-cyan")};
@@ -104,13 +108,42 @@ function enhance(){
  // because that much of it can never be on screen at once. A 0 threshold plus a
  // small bottom inset fires reliably for every height, and anything left hidden
  // is forced visible below so animation can never cost us the content.
- const reveal=el=>{el.classList.add("bta-visible")};
+ // Two reveal tracks. Elements tagged data-terminal-reveal play the full
+ // terminal -> element transition (boot, then a glitch pass); everything else
+ // keeps the plain decode fade. The class is only ever attached here, so if this
+ // script never runs the section keeps its normal opacity instead of being
+ // stranded at opacity:0 by CSS nothing told it about.
+ const reveal=el=>{if(el.dataset.btaRevealed)return;el.dataset.btaRevealed="1";
+  if(!el.classList.contains("bta-terminal-reveal")){el.classList.add("bta-visible");return}
+  el.classList.add("bta-decoding");
+  // btaGlitchFlash replaces btaElementBoot with no fill mode, so the landed state
+  // is pinned first. Both animation classes are then dropped together: removing
+  // only bta-glitch would hand the animation property back to bta-decoding and
+  // replay the boot from the start.
+  setTimeout(()=>el.classList.add("bta-decoded","bta-glitch"),860);
+  setTimeout(()=>el.classList.remove("bta-decoding","bta-glitch"),1300)};
  const targets=[...document.querySelectorAll("main section,main .page-intro,main .archive-note,main .member-card")];
  if(!("IntersectionObserver" in window)||reduce){targets.forEach(reveal)}
  else{const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){reveal(e.target);io.unobserve(e.target)}}),{threshold:0,rootMargin:"0px 0px -6% 0px"});
- targets.forEach(el=>{el.classList.add("bta-decode");io.observe(el)});
+ targets.forEach(el=>{el.classList.add(el.hasAttribute("data-terminal-reveal")?"bta-terminal-reveal":"bta-decode");io.observe(el)});
  setTimeout(()=>targets.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0)reveal(el)}),1200);
- addEventListener("load",()=>setTimeout(()=>targets.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<innerHeight*1.2&&r.bottom>0)reveal(el)}),400),{once:true})}
+ addEventListener("load",()=>setTimeout(()=>targets.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<innerHeight*1.2&&r.bottom>0)reveal(el)}),400),{once:true});
+ // Same reasoning as the two timeouts above, but running for as long as the page
+ // lives: those only sample a single moment each, so an element IntersectionObserver
+ // ever misses would sit at opacity:0 forever. Animation must never cost us
+ // content. reveal() is idempotent and this only fires for elements already on
+ // screen, so the visible effect is unchanged.
+ const inView=()=>{targets.forEach(el=>{if(el.dataset.btaRevealed)return;const r=el.getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0)reveal(el)});
+  // Retire the net only once every target has landed. A fixed timeout would be a
+  // guess about how long the reader lingers, and a page they open and leave
+  // alone for a minute still has to reveal its below-fold content when they come
+  // back to it.
+  if(targets.every(el=>el.dataset.btaRevealed)){removeEventListener("scroll",onMove);removeEventListener("resize",onMove)}};
+ let pending=false;
+ const onMove=()=>{if(pending)return;pending=true;setTimeout(()=>{pending=false;inView()},120)};
+ addEventListener("scroll",onMove,{passive:true});
+ addEventListener("resize",onMove,{passive:true});
+ inView()}
  let clicks=0;const status=document.querySelector(".system-strip");if(status)status.addEventListener("click",()=>{if(++clicks>=5){open(status);clicks=0}});
  const clock=document.querySelector(".bta-clock");
  const tickClock=()=>{if(clock)clock.textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})};
