@@ -12,6 +12,17 @@ const bootLines=[
 ["UNKNOWN SIGNAL DETECTED","warn"],["SIGNAL IDENTIFIED","accent"],["SOURCE: BENEATH_THE_ALTER","ok"],["",""],["LOADING BTA-OS","accent"]
 ];
 
+// Non-home pages skip the cold boot: the machine is already up and the visitor
+// is already known, so they run this condensed handshake instead - a few checks,
+// an identity confirmation, and ACCESS GRANTED. Eleven lines at the same cadence
+// as the full boot, with a shorter logo and fade, lands the whole overlay at ~2s.
+const grantedLines=[
+ ["BTA-3000 BIOS v.3000.7","accent"],["BENEATH THE ALTER SYSTEMS","ok"],["",""],
+ ["MEMORY CHECK ............ OK","ok"],["AUDIO CORE .............. OK","ok"],["NETWORK INTERFACE ....... OK","ok"],["",""],
+ ["SECURE CHANNEL ...... ESTABLISHED","ok"],["IDENTITY CONFIRMED","accent"],["",""],
+ ["ACCESS GRANTED","accent"]
+];
+
 function boot(){
  const root=document.createElement("div");
  root.className="bta-boot";
@@ -19,17 +30,23 @@ function boot(){
  document.body.prepend(root);
  const screen=root.querySelector(".bta-boot__screen"),bar=root.querySelector(".bta-boot__bar"),pct=root.querySelector(".bta-pct");
  let finished=false;
- // Every load replays the whole sequence - refresh, a nav click, a back
- // button - so there is deliberately no "seen it before" shortcut. logoMs and
+ // The homepage is the cold boot: twenty-seven lines, ~3.9s, the works. Every
+ // other page runs the condensed ACCESS GRANTED handshake above for ~2s, because
+ // nothing is being initialised on a navigation. Both paths replay on every load
+ // - refresh, nav click, back button - with no "seen it before" flag. logoMs and
  // fadeS are handed to CSS so the overlay is always removed just after its own
- // animation actually ends. Reduced motion runs the same overlay minus the
- // streaming: three summary lines instead of twenty-seven.
- const logoMs=reduce?60:700;
- const fadeS=reduce?.2:.55;
+ // animation actually ends. Reduced motion runs the overlay without streaming.
+ const file=(location.pathname.split("/").pop()||"").toLowerCase();
+ const home=file===""||file==="index.html"||file==="index.htm";
+ const logoMs=reduce?60:(home?700:450);
+ const fadeS=reduce?.2:(home?.55:.30);
  root.style.setProperty("--bta-fade",fadeS+"s");
- // The reduced-motion panel cannot spare the full 900ms logo reveal, so it gets
- // a compressed one that finishes instead of being cut off mid-blur.
- if(reduce)root.classList.add("fast");
+ // Reduced motion and the short handshake both cannot spare the full 900ms logo
+ // reveal, so they get a compressed one that is allowed to finish rather than
+ // being clipped mid-blur.
+ if(reduce||!home)root.classList.add("fast");
+ // Initializing is the wrong word when nothing is being initialized.
+ if(!reduce&&!home)root.querySelector(".bta-boot__status span").textContent="ACCESS CHECK";
  // One place that renders a BIOS line, so both paths share markup and class names.
  const addLine=(txt,kind)=>{const el=document.createElement("div");el.className="bta-boot__line "+(kind||"");el.textContent="> "+txt;screen.append(el);screen.scrollTop=screen.scrollHeight;return el};
  const finish=()=>{if(finished)return;finished=true;root.classList.add("logo-phase");setTimeout(()=>{root.classList.add("is-done");setTimeout(()=>root.remove(),Math.round(fadeS*1000)+40)},logoMs)};
@@ -45,11 +62,15 @@ function boot(){
   addLine("SYSTEM READY","accent");
   bar.style.width="100%";pct.textContent="100%";setTimeout(finish,40);return;
  }
+ const seq=home?bootLines:grantedLines;
+ const lead=home?180:120;
+ const tail=home?380:280;
+ const cadence=()=>home?40+Math.random()*50:50+Math.random()*30;
  let i=0;
- const tick=()=>{if(finished)return;if(i<bootLines.length){const [txt,kind]=bootLines[i++];addLine(txt,kind)}
- const p=Math.min(99,Math.round(i/bootLines.length*100));bar.style.width=p+"%";pct.textContent=p+"%";
- if(i<bootLines.length)setTimeout(tick,40+Math.random()*50);else{bar.style.width="100%";pct.textContent="100%";setTimeout(finish,380)}};
- setTimeout(tick,180);
+ const tick=()=>{if(finished)return;if(i<seq.length){const [txt,kind]=seq[i++];addLine(txt,kind)}
+ const p=Math.min(99,Math.round(i/seq.length*100));bar.style.width=p+"%";pct.textContent=p+"%";
+ if(i<seq.length)setTimeout(tick,cadence());else{bar.style.width="100%";pct.textContent="100%";setTimeout(finish,tail)}};
+ setTimeout(tick,lead);
 }
 function enhance(){
  document.body.classList.add("bta-os");

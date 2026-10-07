@@ -77,11 +77,16 @@ contact form, the Spotify player and all content JSON keep working unchanged.
 
 ### What it adds
 
-- A BIOS boot sequence (≈3s) with an animated progress bar and a
-  **SKIP INITIALIZATION** button, replayed in full on **every** page load —
-  refresh, in-site nav click, back button — so each screen boots the machine
-  again. `prefers-reduced-motion` gets the same boot as three summary lines
-  ending in `SYSTEM READY`, then an instant reveal.
+- Two BIOS boot variants, replayed on **every** page load — refresh, in-site
+  nav click, back button — with no "seen it before" flag anywhere:
+  - **Homepage**: the full cold boot, 27 lines, ≈3.8s, progress bar climbing
+    to 100%.
+  - **Every other page**: a condensed handshake, 11 lines ending in
+    `ACCESS GRANTED`, ≈2s, with the status line reading `ACCESS CHECK`.
+
+  Both carry **SKIP INITIALIZATION**. `prefers-reduced-motion` gets the
+  overlay without streaming — three summary lines ending in `SYSTEM READY`,
+  then an instant reveal.
 - A top-bar readout (`BTA-OS // ONLINE`, node, signal, live clock) inserted into
   the existing `.system-strip`, plus HUD corner brackets and a scanline sweep.
 - A simulated terminal. Type `ALTER` or `BTA3000` anywhere outside a form field,
@@ -104,12 +109,13 @@ contact form, the Spotify player and all content JSON keep working unchanged.
 
 ### Boot storage
 
-None. The boot reads and writes no storage whatsoever: it replays in full on
-every load, so there is no "seen it before" flag to go stale and nothing to
-read or clear in private mode. The `bta_boot_completed` key that the earlier
-first-visit-only version wrote is now neither read nor written — browsers that
-picked it up still carry it until they clear storage themselves, but it has no
-effect on anything.
+None. The boot reads and writes no storage whatsoever: it replays on every
+load, so there is no "seen it before" flag to go stale and nothing to
+read or clear in private mode. Which variant runs is decided purely from
+`location.pathname`, so it is identical for every visitor. The
+`bta_boot_completed` key that the earlier first-visit-only version wrote is
+now neither read nor written — browsers that picked it up still carry it
+until they clear storage themselves, but it has no effect on anything.
 
 ## Important
 
